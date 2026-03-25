@@ -1,3 +1,4 @@
+// frontend/vite.config.js
 import { defineConfig } from 'vite'
 import electron from 'vite-plugin-electron/simple'
 import path from 'path'
@@ -8,7 +9,15 @@ export default defineConfig({
       main: { entry: 'electron/main.js' },
       preload: {
         input: 'electron/preload.js',
-        format: 'cjs',
+        vite: {
+          build: {
+            rollupOptions: {
+              output: {
+                entryFileNames: 'preload.js',  // force .js not .mjs
+              }
+            }
+          }
+        }
       },
       renderer: {}
     })
