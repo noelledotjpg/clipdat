@@ -650,11 +650,19 @@ function initSidebarCollapse() {
   const ICON_COLLAPSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>`
   const ICON_EXPAND   = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>`
 
+  const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true'
+  if (savedCollapsed) sidebar.classList.add('collapsed')
+  btn.innerHTML = savedCollapsed ? ICON_EXPAND : ICON_COLLAPSE
+  btn.title = savedCollapsed ? 'expand sidebar' : 'collapse sidebar'
+
   btn.addEventListener('click', () => {
     sidebar.classList.toggle('collapsed')
     const collapsed = sidebar.classList.contains('collapsed')
     btn.title     = collapsed ? 'expand sidebar' : 'collapse sidebar'
     btn.innerHTML = collapsed ? ICON_EXPAND : ICON_COLLAPSE
+
+    // Save state
+    localStorage.setItem('sidebar-collapsed', collapsed)
   })
 }
 

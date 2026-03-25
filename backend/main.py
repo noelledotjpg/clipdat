@@ -179,14 +179,14 @@ def build_ffmpeg_args(s):
 # ── clip metadata ─────────────────────────────────────────────────
 
 def generate_preview(filepath):
-    out_file = BOXART_DIR / f'{Path(filepath).stem}_preview.jpg'
+    out_file = Path(filepath).with_suffix('.jpg')
     try:
         subprocess.run([
             str(FFMPEG),
             '-i', str(filepath),
-            '-ss', '00:00:01',
+            '-ss', '00:00:01',   # seek 1 second in
             '-frames:v', '1',
-            '-q:v', '2',
+            '-q:v', '2',         # quality for jpeg
             '-y',
             str(out_file)
         ], capture_output=True, timeout=5)
@@ -202,24 +202,12 @@ def probe_duration(filepath):
     try:
         result = subprocess.run(
             [str(FFPROBE), '-v', 'quiet', '-print_format', 'json',
-             '-show_format', '-show_streams', str(filepath)],
+             '-show_format', str(filepath)],
             capture_output=True, text=True, timeout=5
         )
         info = json.loads(result.stdout)
-
-        # prefer video stream duration if available
-        duration = None
-        streams = info.get('streams', [])
-        for s in streams:
-            if s.get('codec_type') == 'video' and 'duration' in s:
-                duration = float(s['duration'])
-                break
-
-        if duration is None:
-            # fallback to container duration
-            duration = float(info['format']['duration'])
-
-        m, s = divmod(int(duration), 60)
+        secs = float(info['format']['duration'])
+        m, s = divmod(int(secs), 60)
         return f'{m}:{s:02d}'
     except Exception:
         return '?:??'
@@ -248,12 +236,11 @@ def file_to_clip(filepath):
     boxart_file = BOXART_DIR / f'{game_key}.jpg'
     boxart_url  = f'/boxart/{game_key}.jpg' if boxart_file.exists() else None
     
-    preview_file = BOXART_DIR / f'{p.stem}_preview.jpg'
+    preview_file = Path(BOXART_DIR) / f'{p.stem}_preview.jpg'
     if not preview_file.exists():
-        generated = generate_preview(p)
-        preview_file = generated if generated else None
-    if preview_file:
-        preview_file = f'/boxart/{preview_file.name}'
+        preview_file = generate_preview(p) or None
+    else:
+        preview_file = str(preview_file)
 
     return {
         'name':     p.stem,

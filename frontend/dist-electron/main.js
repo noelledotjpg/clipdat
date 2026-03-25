@@ -49,7 +49,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1200,
     height: 680,
-    minWidth: 1000,
+    minWidth: 1e3,
     minHeight: 500,
     frame: true,
     icon,
