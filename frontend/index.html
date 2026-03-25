@@ -18,39 +18,47 @@
     <div class="version">v0.1a</div>
     <div class="rec-indicator" id="rec-indicator">
       <div class="rec-dot"></div>
-      recording
+      <span class="rec-label">recording</span>
     </div>
   </div>
   <div class="body">
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <nav class="nav">
+        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="collapse sidebar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
         <div class="nav-group-label">general</div>
         <button class="nav-item active" data-panel="dashboard">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-          dashboard
+          <span>dashboard</span>
         </button>
         <button class="nav-item" data-panel="clips">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/></svg>
-          clips
+          <span>clips</span>
         </button>
         <div class="nav-group-label" style="margin-top:6px">settings</div>
-        <button class="nav-item" data-panel="apps">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/></svg>
-          games &amp; apps
+        <span class="label-divider"></span>
+        <button class="nav-item" data-panel="preferences">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>preferences</span>
         </button>
         <button class="nav-item" data-panel="video">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
-          video
+          <span>video</span>
+        </button>
+        <button class="nav-item" data-panel="apps">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/></svg>
+          <span>games &amp; apps</span>
         </button>
         <button class="nav-item" data-panel="hotkeys">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
-          hotkeys
+          <span>hotkeys</span>
         </button>
       </nav>
       <div class="sidebar-footer">
         <button class="tray-btn" id="tray-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="M17 7v10H7"/></svg>
-          minimize to tray
+          <span>minimize to tray</span>
         </button>
       </div>
     </div>
@@ -78,21 +86,6 @@
             <div class="card-label">status</div>
             <div class="card-value" style="font-size:13px" id="dash-status">idle</div>
             <div class="card-sub" id="dash-status-sub">not recording</div>
-          </div>
-        </div>
-        <div class="block">
-          <div class="section-header"><span class="section-title">quick settings</span></div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">record on launch</div><div class="toggle-sub">start capturing automatically when clipdat opens</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-record-on-launch" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">active window only</div><div class="toggle-sub">pause capture when monitored app loses focus</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-active-window" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">clip save sound</div><div class="toggle-sub">play a sound when saving a clip (excluded from the recording)</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-clip-sound" data-setting /><span class="toggle-track"></span></label>
           </div>
         </div>
         <div class="block">
@@ -134,11 +127,44 @@
         <div id="clips-content"></div>
       </div>
 
+      <!-- PREFERENCES -->
+      <div class="panel" id="panel-preferences">
+        <div class="settings-section">
+          <div class="settings-section-title">capture</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">active window only</div><div class="toggle-sub">pause capture when monitored app loses focus</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-active-window" data-setting /><span class="toggle-track"></span></label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">sounds</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">clip save sound</div><div class="toggle-sub">play a sound when a clip is saved</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-clip-sound" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">recording sounds</div><div class="toggle-sub">play sounds when starting and stopping a recording</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-rec-sounds" data-setting /><span class="toggle-track"></span></label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">output</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">open folder after saving</div><div class="toggle-sub">open the clips folder in explorer after each save</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-open-folder" data-setting /><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </div>
+
       <!-- GAMES & APPS -->
       <div class="panel" id="panel-apps">
         <div class="settings-section">
           <div class="settings-section-title">monitored games &amp; apps</div>
-          <p style="color:var(--muted);font-size:12px">clipdat will only record when one of these processes is in the foreground.</p>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:4px">clipdat will only record when one of these processes is in the foreground.</p>
+          <div class="toggle-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div><div class="toggle-label">record desktop if none focused</div><div class="toggle-sub">keep recording even when no monitored app is in focus</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span class="toggle-track"></span></label>
+          </div>
           <div class="tag-list" id="monitored-list"></div>
           <button class="add-tag-btn" onclick="addApp('monitored')">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
@@ -222,10 +248,6 @@
               <option value="low">low</option>
             </select>
           </div>
-          <div class="field-row">
-            <div><div class="field-label">open folder after saving</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-open-folder" data-setting /><span class="toggle-track"></span></label>
-          </div>
         </div>
         <div class="status-bar">
           <div class="status-bar-title">system status</div>
@@ -245,7 +267,7 @@
             <button class="key" id="key-save-clip">F8</button>
           </div>
           <div class="keybind-row">
-            <div><div class="keybind-desc">start / stop recording</div><div class="keybind-sub">toggle capture manually</div></div>
+            <div><div class="keybind-desc">start / stop recording</div><div class="keybind-sub">toggle capture on and off</div></div>
             <button class="key" id="key-toggle-rec">F9</button>
           </div>
           <div class="keybind-row">
@@ -259,6 +281,37 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- Game edit modal -->
+<div class="modal-overlay" id="game-modal-overlay">
+  <div class="modal" id="game-modal">
+    <div class="modal-header">
+      <div class="modal-title">edit game</div>
+      <button class="modal-close" id="game-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">display name</label>
+        <input class="ctrl-input wide" id="game-modal-name" type="text" placeholder="Game name…" />
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">box art</label>
+        <div class="boxart-preview" id="boxart-preview"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="add-tag-btn" id="boxart-url-btn">paste image URL</button>
+          <button class="add-tag-btn" id="boxart-file-btn">upload image</button>
+          <button class="add-tag-btn del-btn" id="boxart-remove-btn">remove</button>
+        </div>
+        <input type="file" id="boxart-file-input" accept="image/*" style="display:none" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="add-tag-btn" id="game-modal-save">save changes</button>
+      <button class="add-tag-btn" id="game-modal-cancel">cancel</button>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

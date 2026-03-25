@@ -1,29 +1,55 @@
-# Logs
-logs
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# ── backend runtime ───────────────────────────────────────────────
+backend/resources/ffmpeg.exe
+backend/resources/ffprobe.exe
+backend/resources/*.exe
+backend/resources/*.dll
+backend/temp/
+backend/boxart/
+backend/game_meta.json
+backend/settings.json
+backend/__pycache__/
+backend/*.pyc
+backend/venv/
+backend/build/
+backend/dist/
+backend/*.spec
+
+# ── frontend build output ─────────────────────────────────────────
+frontend/dist/
+frontend/dist-electron/
+frontend/node_modules/
+frontend/*.local
+
+# ── logs ──────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+logs
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# ── editor ────────────────────────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
+
+node_modules
+dist
+dist-ssr
+*.local
 
 # FFmpeg binaries
 resources/ffmpeg.exe
 resources/ffmpeg
-resources/*.exe
+resources/*.ex

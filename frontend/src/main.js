@@ -21,6 +21,7 @@ const PLAY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24
 
 let clips       = []
 let settings    = null
+let gameMeta    = {}
 let currentView = 'gallery'
 let currentGame = null
 let isRecording = false
@@ -53,8 +54,12 @@ function gameColors(game) {
   return PALETTE[Math.abs(hash) % PALETTE.length]
 }
 
-function gameCover(game) {
-  const cols = gameColors(game)
+function gameCover(gameKey, displayName) {
+  const boxart = gameMeta[gameKey]?.boxart
+  if (boxart) {
+    return `<img src="${BACKEND}${boxart}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="${displayName}" onerror="this.style.display='none'" />`
+  }
+  const cols = gameColors(displayName || gameKey)
   return `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${cols[0]},${cols[1]},${cols[2]});display:flex;align-items:center;justify-content:center">
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></svg>
   </div>`
@@ -89,8 +94,9 @@ function setRecordingState(recording) {
 // ── clips ─────────────────────────────────────────────────────────
 
 async function loadClips() {
-  const data = await api('/clips')
-  clips = data || []
+  const [data, meta] = await Promise.all([api('/clips'), api('/games/meta')])
+  clips    = data || []
+  gameMeta = meta || {}
   updateDashboardStats()
   renderRecent()
   renderClips()
@@ -118,7 +124,6 @@ function updateDashboardStats() {
   const todayEl = document.getElementById('dash-today')
   if (todayEl) todayEl.textContent = `+${today}`
 
-  // update buffer card from settings
   if (settings) {
     const buf = settings.capture.buffer_duration
     const bufEl = document.getElementById('dash-buffer')
@@ -206,17 +211,27 @@ function renderGallery(filter) {
       return
     }
 
+    const gameKey = gameClips[0]?.game_key || currentGame;
     content.innerHTML = `
       <button class="back-btn" id="back-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         all games
       </button>
       <div class="game-view-header">
-        <div class="game-view-title">${currentGame}</div>
-        <div class="game-view-count">${gameClips.length} clip${gameClips.length !== 1 ? 's' : ''}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="game-view-title">${currentGame}</div>
+            <div class="game-view-count">${gameClips.length} clip${gameClips.length !== 1 ? "s" : ""}</div>
+          </div>
+            <button class="three-dots-btn" data-edit-game="${gameKey}" title="edit game">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="clip-gallery">
-        ${gameClips.map(c => `
+        ${gameClips
+          .map(
+            (c) => `
           <div class="clip-card">
             <div class="clip-thumb">
               <div class="clip-thumb-bg">${clipThumb(c)}</div>
@@ -235,14 +250,18 @@ function renderGallery(filter) {
               </div>
             </div>
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
-    `
+    `;
     document.getElementById('back-btn')?.addEventListener('click', () => { currentGame = null; renderGallery() })
     content.querySelectorAll('[data-show]').forEach(btn =>
       btn.addEventListener('click', () => showFile(btn.dataset.show)))
     content.querySelectorAll('[data-del]').forEach(btn =>
       btn.addEventListener('click', () => deleteClip(btn.dataset.del)))
+    content.querySelectorAll('[data-edit-game]').forEach(btn =>
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
     return
   }
 
@@ -252,22 +271,34 @@ function renderGallery(filter) {
     return
   }
 
+  const gameKeyMap = {}
+  clips.forEach(c => { if (c.game_key) gameKeyMap[c.game] = c.game_key })
+
   content.innerHTML = `<div class="game-grid">
-    ${Object.entries(groups).map(([game, cs]) => `
-      <div class="game-card" data-game="${game}">
+    ${Object.entries(groups).map(([game, cs]) => {
+      const gameKey = gameKeyMap[game] || game
+      return `
+      <div class="game-card" data-game="${game}" data-game-key="${gameKey}">
         <div class="game-cover">
-          <div class="game-cover-bg">${gameCover(game)}</div>
+          <div class="game-cover-bg">${gameCover(gameKey, game)}</div>
         </div>
         <div class="game-card-footer">
           <div class="game-card-name">${game}</div>
-          <div class="game-card-count">${cs.length} clip${cs.length !== 1 ? 's' : ''}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="game-card-count">${cs.length} clip${cs.length !== 1 ? 's' : ''}</div>
+            <button class="three-dots-btn" data-edit-game="${gameKey}" title="edit game">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+          </div>
         </div>
-      </div>
-    `).join('')}
+      </div>`
+    }).join('')}
   </div>`
 
   content.querySelectorAll('.game-card').forEach(card =>
     card.addEventListener('click', () => { currentGame = card.dataset.game; renderGallery() }))
+  content.querySelectorAll('[data-edit-game]').forEach(btn =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
 }
 
 function renderList(filter) {
@@ -280,10 +311,18 @@ function renderList(filter) {
     return
   }
 
-  content.innerHTML = Object.entries(groups).map(([game, cs]) => `
+  const gameKeyMap = {}
+  clips.forEach(c => { if (c.game_key) gameKeyMap[c.game] = c.game_key })
+
+  content.innerHTML = Object.entries(groups).map(([game, cs]) => {
+    const gameKey = gameKeyMap[game] || game
+    return `
     <div class="collection">
       <div class="collection-header">
         <div class="collection-name">${game}<span class="collection-count">${cs.length}</span></div>
+        <button class="three-dots-btn" data-edit-game="${gameKey}" title="edit game">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
       </div>
       <table class="clip-table">
         <thead><tr><th>name</th><th>dur</th><th>size</th><th>date</th><th></th></tr></thead>
@@ -299,12 +338,14 @@ function renderList(filter) {
         </tr>`).join('')}</tbody>
       </table>
     </div>
-  `).join('')
+  `}).join('')
 
   content.querySelectorAll('[data-show]').forEach(btn =>
     btn.addEventListener('click', () => showFile(btn.dataset.show)))
   content.querySelectorAll('[data-del]').forEach(btn =>
     btn.addEventListener('click', () => deleteClip(btn.dataset.del)))
+  content.querySelectorAll('[data-edit-game]').forEach(btn =>
+    btn.addEventListener('click', () => openGameModal(btn.dataset.editGame)))
 }
 
 function renderClips() {
@@ -324,9 +365,11 @@ async function loadSettings() {
 function applySettingsToUI() {
   const s = settings
 
-  setToggle('toggle-record-on-launch', s.general.record_on_launch)
-  setToggle('toggle-active-window',    s.general.active_window_only)
-  setToggle('toggle-clip-sound',       s.general.clip_save_sound)
+  setToggle('toggle-active-window',  s.general.active_window_only)
+  setToggle('toggle-clip-sound',     s.general.clip_save_sound)
+  setToggle('toggle-rec-sounds',     s.general.rec_sounds)
+  setToggle('toggle-open-folder',    s.output.open_folder_after_save)
+  setToggle('toggle-record-desktop', s.apps?.record_desktop ?? true)
 
   setSelect('sel-buffer',    String(s.capture.buffer_duration))
   setSelect('sel-res',       s.capture.resolution)
@@ -336,7 +379,6 @@ function applySettingsToUI() {
   setInput ('inp-filename',  s.output.filename_template)
   setSelect('sel-container', s.output.container)
   setSelect('sel-quality',   s.output.quality)
-  setToggle('toggle-open-folder', s.output.open_folder_after_save)
 
   setKeyBtn('key-save-clip',    s.hotkeys.save_clip)
   setKeyBtn('key-toggle-rec',   s.hotkeys.toggle_recording)
@@ -380,9 +422,9 @@ async function saveSettings() {
 function collectSettings() {
   if (!settings) return
 
-  settings.general.record_on_launch   = getToggle('toggle-record-on-launch')
   settings.general.active_window_only = getToggle('toggle-active-window')
   settings.general.clip_save_sound    = getToggle('toggle-clip-sound')
+  settings.general.rec_sounds         = getToggle('toggle-rec-sounds')
 
   settings.capture.buffer_duration = parseInt(getSelect('sel-buffer')) || 60
   settings.capture.resolution      = getSelect('sel-res')
@@ -394,6 +436,9 @@ function collectSettings() {
   settings.output.container             = getSelect('sel-container')
   settings.output.quality               = getSelect('sel-quality')
   settings.output.open_folder_after_save = getToggle('toggle-open-folder')
+
+  if (!settings.apps) settings.apps = {}
+  settings.apps.record_desktop = getToggle('toggle-record-desktop')
 
   updateDashboardStats()
   saveSettings()
@@ -494,12 +539,10 @@ async function pollBackend() {
 
 function initGlobalHotkeys() {
   window.addEventListener('keydown', e => {
-    // don't fire if user is typing in an input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-    // don't fire if a key rebind listener is active
     if (document.querySelector('.key.listening')) return
-
     if (!settings) return
+
     const key = e.key === ' ' ? 'Space' : e.key.length === 1 ? e.key.toUpperCase() : e.key
 
     if (key === settings.hotkeys.save_clip) {
@@ -509,6 +552,12 @@ function initGlobalHotkeys() {
     if (key === settings.hotkeys.toggle_recording) {
       e.preventDefault()
       if (isRecording) stopRecording(); else startRecording()
+    }
+    // F10 (open_browser hotkey) — bring window to front / focus
+    // It does NOT toggle recording; it just focuses the window
+    if (key === settings.hotkeys.open_browser) {
+      e.preventDefault()
+      // window is already focused if this fired; nothing extra needed in renderer
     }
   })
 }
@@ -576,11 +625,9 @@ function initViewToggle() {
 
 function initTray() {
   document.getElementById('tray-btn')?.addEventListener('click', () => {
-    // ipcRenderer is exposed via preload.js
     if (window.ipcRenderer) {
       window.ipcRenderer.send('minimize-to-tray')
     } else {
-      // fallback for browser dev mode
       toast('failed to minimize to tray err: dev mode or ipc fail')
     }
   })
@@ -593,13 +640,131 @@ function initFolderButtons() {
   document.getElementById('clips-folder-btn')?.addEventListener('click', openFolder)
 }
 
-// ── record on launch ──────────────────────────────────────────────
+// ── sidebar collapse ──────────────────────────────────────────────
 
-async function handleRecordOnLaunch() {
-  if (settings?.general.record_on_launch) {
-    // small delay to let the UI fully render first
-    setTimeout(startRecording, 500)
+function initSidebarCollapse() {
+  const btn     = document.getElementById('sidebar-collapse-btn')
+  const sidebar = document.getElementById('sidebar')
+  if (!btn || !sidebar) return
+
+  const ICON_COLLAPSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>`
+  const ICON_EXPAND   = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>`
+
+  btn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed')
+    const collapsed = sidebar.classList.contains('collapsed')
+    btn.title     = collapsed ? 'expand sidebar' : 'collapse sidebar'
+    btn.innerHTML = collapsed ? ICON_EXPAND : ICON_COLLAPSE
+  })
+}
+
+// ── game edit modal ───────────────────────────────────────────────
+
+let modalGameKey = null
+
+function openGameModal(gameKey) {
+  modalGameKey = gameKey
+  const meta = gameMeta[gameKey] || {}
+
+  document.getElementById('game-modal-name').value = meta.display_name || gameKey
+
+  const preview = document.getElementById('boxart-preview')
+  if (meta.boxart) {
+    preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
+  } else {
+    preview.innerHTML = '<span style="color:var(--muted);font-size:12px">no box art set</span>'
   }
+
+  document.getElementById('game-modal-overlay').classList.add('active')
+  document.getElementById('game-modal-name').focus()
+}
+
+function closeGameModal() {
+  document.getElementById('game-modal-overlay').classList.remove('active')
+  modalGameKey = null
+}
+
+async function saveGameModal() {
+  if (!modalGameKey) return
+  const newName = document.getElementById('game-modal-name').value.trim()
+  if (!newName) { toast('name cannot be empty'); return }
+
+  const res = await api(`/games/${encodeURIComponent(modalGameKey)}/rename`, 'POST', { name: newName })
+  if (res?.ok) {
+    toast('game updated')
+    await loadClips()
+    closeGameModal()
+  } else {
+    toast('failed to save')
+  }
+}
+
+function initGameModal() {
+  document.getElementById('game-modal-close')?.addEventListener('click', closeGameModal)
+  document.getElementById('game-modal-cancel')?.addEventListener('click', closeGameModal)
+  document.getElementById('game-modal-overlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('game-modal-overlay')) closeGameModal()
+  })
+  document.getElementById('game-modal-save')?.addEventListener('click', saveGameModal)
+
+  document.getElementById('boxart-url-btn')?.addEventListener('click', async () => {
+    const url = prompt('Paste image URL (direct link to .jpg / .png)')
+    if (!url?.trim()) return
+    const res = await api(`/games/${encodeURIComponent(modalGameKey)}/boxart`, 'POST', { url: url.trim() })
+    if (res?.ok) {
+      toast('box art updated')
+      gameMeta = await api('/games/meta') || {}
+      const meta = gameMeta[modalGameKey] || {}
+      const preview = document.getElementById('boxart-preview')
+      if (meta.boxart) {
+        preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
+      }
+      renderClips()
+    } else {
+      toast('failed to fetch image')
+    }
+  })
+
+  document.getElementById('boxart-file-btn')?.addEventListener('click', () => {
+    document.getElementById('boxart-file-input').click()
+  })
+  document.getElementById('boxart-file-input')?.addEventListener('change', async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async ev => {
+      const res = await api(`/games/${encodeURIComponent(modalGameKey)}/boxart`, 'POST', { data: ev.target.result })
+      if (res?.ok) {
+        toast('box art uploaded')
+        gameMeta = await api('/games/meta') || {}
+        const meta = gameMeta[modalGameKey] || {}
+        const preview = document.getElementById('boxart-preview')
+        if (meta.boxart) {
+          preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
+        }
+        renderClips()
+      } else {
+        toast('upload failed')
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  })
+
+  document.getElementById('boxart-remove-btn')?.addEventListener('click', async () => {
+    const res = await api(`/games/${encodeURIComponent(modalGameKey)}/boxart`, 'DELETE')
+    if (res?.ok) {
+      toast('box art removed')
+      gameMeta = await api('/games/meta') || {}
+      document.getElementById('boxart-preview').innerHTML = '<span style="color:var(--muted);font-size:12px">no box art set</span>'
+      renderClips()
+    }
+  })
+
+  document.getElementById('game-modal-name')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveGameModal()
+    if (e.key === 'Escape') closeGameModal()
+  })
 }
 
 // ── init ──────────────────────────────────────────────────────────
@@ -611,12 +776,12 @@ async function init() {
   initTray()
   initKeyButtons()
   initGlobalHotkeys()
+  initSidebarCollapse()
+  initGameModal()
   watchSettings()
 
   await Promise.all([loadSettings(), pollBackend()])
   await loadClips()
-
-  handleRecordOnLaunch()
 
   setInterval(pollBackend, 5000)
   setInterval(loadClips,   30000)

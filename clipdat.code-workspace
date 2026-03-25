@@ -1,7 +1,7 @@
 {
   "folders": [
     { "name": "Backend", "path": "./backend" },
-    { "name": "Frontend", "path": "./frontend" }
+    { "name": "Frontend", "path": "./frontend" },
   ],
   "settings": {
     "python.defaultInterpreterPath": "${workspaceFolder:Backend}/venv/Scripts/python.exe",
@@ -9,15 +9,18 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "[python]": {
-      "editor.defaultFormatter": "ms-python.python"
-    }
+      "editor.defaultFormatter": "ms-python.python",
+    },
+    "[css]": {
+      "editor.defaultFormatter": "vscode.css-language-features",
+    },
   },
   "extensions": {
     "recommendations": [
       "ms-python.python",
       "ms-python.pylance",
       "dbaeumer.vscode-eslint",
-      "esbenp.prettier-vscode"
-    ]
-  }
+      "esbenp.prettier-vscode",
+    ],
+  },
 }
