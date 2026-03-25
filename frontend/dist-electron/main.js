@@ -31,8 +31,11 @@ function startBackend() {
 }
 function createWindow() {
   win = new BrowserWindow({
-    width: 900,
+    width: 1e3,
     height: 600,
+    minWidth: 1e3,
+    minHeight: 600,
+    icon: path.join(__dirname$1, "../src/img/icon_titlebar.png"),
     webPreferences: {
       preload: path.join(__dirname$1, "preload.js")
     }
