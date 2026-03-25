@@ -1,57 +1,66 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-let win
-let backend
+let win = null
+let tray = null
+let backend = null
 
 function startBackend() {
   const isDev = !!process.env.VITE_DEV_SERVER_URL
-
   const backendPath = isDev
     ? path.join(__dirname, '../../backend/main.py')
     : path.join(process.resourcesPath, 'clipdat-backend.exe')
 
   if (isDev) {
     const venvPython = path.join(__dirname, '../../backend/venv/Scripts/python.exe')
-    backend = spawn(venvPython, [backendPath], {
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
+    backend = spawn(venvPython, [backendPath], { stdio: ['ignore', 'pipe', 'pipe'] })
   } else {
-    backend = spawn(backendPath, [], {
-      stdio: 'ignore'
-    })
+    backend = spawn(backendPath, [], { stdio: 'ignore' })
   }
 
-  backend.stdout?.on('data', (data) => {
-    console.log(`[backend] ${data.toString().trim()}`)
-  })
+  backend.stdout?.on('data', d => console.log(`[backend] ${d.toString().trim()}`))
+  backend.stderr?.on('data', d => console.error(`[backend err] ${d.toString().trim()}`))
+  backend.on('exit', code => console.log(`[backend] exited with code ${code}`))
+}
 
-  backend.stderr?.on('data', (data) => {
-    console.error(`[backend error] ${data.toString().trim()}`)
-  })
-
-  backend.on('exit', (code) => {
-    console.log(`[backend] exited with code ${code}`)
-  })
+function createTray() {
+  const iconPath = path.join(__dirname, '../../frontend/src/img/icon_titlebar.png')
+  const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+  tray = new Tray(icon)
+  tray.setToolTip('clipdat!')
+  const menu = Menu.buildFromTemplate([
+    { label: 'Show clipdat', click: () => { win?.show(); win?.focus() } },
+    { type: 'separator' },
+    { label: 'Quit', click: () => { app.isQuitting = true; app.quit() } },
+  ])
+  tray.setContextMenu(menu)
+  tray.on('double-click', () => { win?.show(); win?.focus() })
 }
 
 function createWindow() {
+  const iconPath = path.join(__dirname, '../../frontend/src/img/icon_titlebar.png')
+  const icon = nativeImage.createFromPath(iconPath)
+  const preloadPath = process.env.ELECTRON_PRELOAD || path.join(__dirname, 'preload.js')
+
   win = new BrowserWindow({
-    width: 1000,
-    height: 600,
-
-    minWidth: 1000, 
-    minHeight: 600, 
-
-    icon: path.join(__dirname, '../src/img/icon_titlebar.png'),
+    width: 1200,
+    height: 680,
+    minWidth: 700,
+    minHeight: 500,
+    frame: true,
+    icon: icon,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: preloadPath,
+      contextIsolation: true,
+      nodeIntegration: false,
     }
   })
+
+  Menu.setApplicationMenu(null)
 
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL)
@@ -59,15 +68,22 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
+
+  win.on('close', e => {
+    if (!app.isQuitting) {
+      e.preventDefault()
+      win.hide()
+    }
+  })
 }
+
+ipcMain.on('minimize-to-tray', () => win?.hide())
 
 app.whenReady().then(() => {
   startBackend()
-  // Small delay to let Flask start before the window loads
-  setTimeout(createWindow, 1500)
+  setTimeout(() => { createWindow(); createTray() }, 1500)
 })
 
-app.on('window-all-closed', () => {
-  backend?.kill()
-  if (process.platform !== 'darwin') app.quit()
-})
+app.on('window-all-closed', () => {})
+app.on('before-quit', () => { app.isQuitting = true; backend?.kill() })
+app.on('activate', () => win?.show())

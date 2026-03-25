@@ -6,219 +6,22 @@
   <title>clipdat!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Krona+One&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:          #131415;
-      --surface:     #181a1c;
-      --surface2:    #1e2023;
-      --border:      #26282b;
-      --border2:     #2e3135;
-      --muted:       #5a5e63;
-      --dim:         #404448;
-      --fg:          #b6babe;
-      --bright:      #e0e3e6;
-      --accent:      #b6c030;
-      --green:       #3d9e4a;
-      --red:         #c94040;
-      --mono:        'IBM Plex Mono', monospace;
-    }
-
-    html, body {
-      height: 100%; background: var(--bg); color: var(--fg);
-      font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.5;
-      overflow: hidden; -webkit-font-smoothing: antialiased;
-      user-select: none;
-    }
-
-    button { cursor: pointer; font-family: inherit; font-size: 13px; border: none; background: none; color: inherit; outline: none; }
-    input, select { font-family: inherit; font-size: 13px; outline: none; }
-
-    .shell { display: flex; flex-direction: column; height: 100vh; }
-
-    /* ── TOPBAR ── */
-    .topbar {
-      position: relative; height: 30px;
-      display: flex; align-items: center;
-      padding: 0 12px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface); flex-shrink: 0;
-    }
-    .logo { display: flex; align-items: center; gap: 7px; }
-    .logo-icon { width: 17px; height: 17px; background: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .logo-icon span { font-size: 10px; font-weight: 700; color: #000; font-family: var(--mono); line-height: 1; }
-    .logo-text { font-family: 'Krona One', sans-serif; font-size: 14px; color: var(--bright); transform: translateY(1px); }
-    .logo-text em { color: var(--accent); font-style: normal; }
-    .version { position: absolute; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 11px; color: var(--dim); pointer-events: none; }
-
-    /* ── BODY ── */
-    .body { display: flex; flex: 1; overflow: hidden; }
-
-    /* ── SIDEBAR ── */
-    .sidebar { width: 176px; border-right: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; flex-shrink: 0; }
-    .nav { flex: 1; padding: 8px 0; }
-    .nav-group-label { padding: 8px 12px 3px; font-size: 10px; font-weight: bolder; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
-    .nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 12px; color: var(--muted); text-align: left; font-size: 11px; transition: color 0.1s, background 0.1s; border-left: 2px solid transparent; }
-    .nav-item svg { flex-shrink: 0; }
-    .nav-item:hover { color: var(--fg); background: rgba(255,255,255,0.025); }
-    .nav-item.active { color: var(--accent); background: rgb(from var(--accent) r g b / 0.05); border-left-color: var(--accent); }
-    .sidebar-footer { border-top: 1px solid var(--border); height: 30px; }
-    .tray-btn { display: flex; align-items: center; gap: 7px; width: 100%; color: var(--muted); font-size: 12px; justify-content: center; padding: 5px 0; transition: color 0.1s; transform: translateX(-6px); }
-    .tray-btn:hover { color: var(--fg); }
-
-    /* ── MAIN ── */
-    .main { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--dim) transparent; }
-    .panel { display: none; padding: 14px 16px; }
-    .panel.active { display: block; }
-
-    /* ── DASHBOARD ── */
-    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-    .card { background: var(--surface); border: 1px solid var(--border); padding: 11px 13px; }
-    .card-label { font-size: 10px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.07em; }
-    .card-value { font-size: 20px; font-weight: 500; color: var(--bright); font-family: var(--mono); }
-    .card-value.accent { color: var(--accent); }
-    .card-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .block { background: var(--surface); border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 10px; }
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .section-title { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-    .link-btn { font-size: 12px; color: var(--muted); transition: color 0.1s; }
-    .link-btn:hover { color: var(--accent); }
-    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
-    .toggle-row:last-child { border-bottom: none; }
-    .toggle-label { color: var(--fg); }
-    .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .toggle { position: relative; width: 28px; height: 15px; flex-shrink: 0; }
-    .toggle input { display: none; }
-    .toggle-track { position: absolute; inset: 0; background: var(--dim); border: 1px solid var(--border2); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
-    .toggle-track::after { content: ''; position: absolute; width: 9px; height: 9px; background: var(--muted); top: 2px; left: 2px; transition: transform 0.15s, background 0.15s; }
-    .toggle input:checked + .toggle-track { background: rgb(from var(--accent) r g b / 0.05); border-color: var(--accent); }
-    .toggle input:checked + .toggle-track::after { transform: translateX(13px); background: var(--accent); }
-
-    /* ── CLIP TABLE ── */
-    .clip-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .clip-table th { text-align: left; font-size: 11px; font-weight: 400; color: var(--muted); padding: 0 10px 6px; border-bottom: 1px solid var(--border); letter-spacing: 0.04em; }
-    .clip-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
-    .clip-table tr:last-child td { border-bottom: none; }
-    .clip-table th:nth-child(1), .clip-table td:nth-child(1) { width: 30%; }
-    .clip-table th:nth-child(2), .clip-table td:nth-child(2) { width: 180px; }
-    .clip-table th:nth-child(3), .clip-table td:nth-child(3) { width: 90px; }
-    .clip-table th:nth-child(4), .clip-table td:nth-child(4) { width: 140px; }
-    .clip-table th:nth-child(5), .clip-table td:nth-child(5) { width: 140px; }
-    .clip-table th:nth-child(6), .clip-table td:nth-child(6) { width: 130px; }
-    .clip-table tr:hover td { background: rgb(from var(--accent) r g b / 0.05); }
-    .td-name { color: var(--bright); font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .td-game { color: var(--muted); font-size: 12px; }
-    .td-dur  { color: var(--accent); font-family: var(--mono); font-size: 12px; }
-    .td-size { color: var(--muted); font-family: var(--mono); font-size: 12px; }
-    .td-date { color: var(--muted); font-size: 12px; }
-    .td-act button { color: var(--muted); font-size: 11px; padding: 0 3px; transition: color 0.1s; }
-    .td-act button:hover { color: var(--fg); }
-    .td-act button.del:hover { color: var(--red); }
-
-    /* ── CLIPS PANEL ── */
-    .clips-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
-    .view-toggle { display: flex; border: 1px solid var(--border2); }
-    .view-btn { padding: 4px 9px; color: var(--muted); border: none; transition: color 0.1s, background 0.1s; }
-    .view-btn.active { background: var(--surface2); color: var(--bright); }
-    .view-btn:hover:not(.active) { color: var(--fg); }
-    .folder-btn { display: flex; align-items: center; gap: 6px; border: 1px solid var(--border2); color: var(--muted); padding: 4px 10px; font-size: 12px; transition: color 0.1s, border-color 0.1s; }
-    .folder-btn:hover { color: var(--fg); border-color: var(--muted); }
-
-    /* ── GALLERY ── */
-    .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-    .game-card { background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: border-color 0.15s; overflow: hidden; }
-    .game-card:hover { border-color: var(--border2); }
-    .game-cover { width: 100%; aspect-ratio: 3/4; position: relative; overflow: hidden; }
-    .game-cover-bg { position: absolute; inset: 0; }
-    .game-cover-overlay { display: none; }
-    .game-card-footer { padding: 8px 10px; border-top: 1px solid var(--border); }
-    .game-card-name { color: var(--bright); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .game-card-count { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .clip-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-    .clip-card { background: var(--surface); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
-    .clip-card:hover { border-color: var(--border2); }
-    .clip-thumb { width: 100%; aspect-ratio: 16/9; position: relative; overflow: hidden; }
-    .clip-thumb-bg { position: absolute; inset: 0; }
-    .clip-thumb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; }
-    .clip-card:hover .clip-thumb-overlay { opacity: 1; }
-    .clip-thumb-overlay svg { color: white; }
-    .clip-duration { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.7); color: var(--bright); font-family: var(--mono); font-size: 11px; padding: 1px 5px; }
-    .clip-card-footer { padding: 8px 10px; border-top: 1px solid var(--border); }
-    .clip-card-name { color: var(--bright); font-family: var(--mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .clip-card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; justify-content: space-between; }
-    .clip-card-actions { display: flex; gap: 4px; margin-top: 6px; }
-    .clip-action-btn { font-size: 11px; color: var(--muted); padding: 2px 6px; border: 1px solid var(--border2); transition: color 0.1s, border-color 0.1s; }
-    .clip-action-btn:hover { color: var(--fg); border-color: var(--muted); }
-    .clip-action-btn.del:hover { color: var(--red); border-color: var(--red); }
-    .back-btn { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; margin-bottom: 12px; transition: color 0.1s; }
-    .back-btn:hover { color: var(--fg); }
-    .game-view-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-    .game-view-title { color: var(--bright); font-size: 15px; font-weight: 500; }
-    .game-view-count { font-size: 12px; color: var(--muted); }
-    .collection { margin-bottom: 18px; }
-    .collection-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
-    .collection-name { display: flex; align-items: center; gap: 8px; color: var(--bright); font-weight: 500; }
-    .collection-count { font-size: 11px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 1px 7px; }
-
-    /* ── SETTINGS ── */
-    .settings-section { margin-bottom: 18px; }
-    .settings-section-title { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-    .field-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); gap: 12px; }
-    .field-row:last-child { border-bottom: none; }
-    .field-label { color: var(--fg); }
-    .field-sub { font-size: 11px; color: var(--muted); }
-    .ctrl-select { background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 3px 8px; min-width: 130px; }
-    .ctrl-select:focus { border-color: var(--accent); }
-    .ctrl-input { background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 3px 8px; font-family: var(--mono); font-size: 12px; width: 240px; }
-    .ctrl-input:focus { border-color: var(--accent); }
-    .ctrl-input.wide { width: 100%; max-width: 340px; }
-    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .tag { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border2); padding: 3px 8px; font-family: var(--mono); font-size: 11px; color: var(--fg); }
-    .tag button { color: var(--muted); font-size: 11px; transition: color 0.1s; padding: 0; line-height: 1; }
-    .tag button:hover { color: var(--red); }
-    .add-tag-btn { font-size: 12px; color: var(--muted); border: 1px dashed var(--border2); padding: 3px 10px; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; transition: color 0.1s, border-color 0.1s; }
-    .add-tag-btn:hover { color: var(--accent); border-color: var(--accent); }
-    .keybind-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
-    .keybind-row:last-child { border-bottom: none; }
-    .keybind-desc { color: var(--fg); }
-    .keybind-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .key { font-family: var(--mono); font-size: 12px; border: 1px solid var(--border2); color: var(--fg); padding: 3px 12px; min-width: 60px; text-align: center; cursor: pointer; background: var(--surface2); transition: border-color 0.1s, color 0.1s; }
-    .key:hover { border-color: var(--accent); color: var(--accent); }
-    .key.listening { border-color: var(--accent); color: var(--accent); animation: blink 0.6s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0.3; } }
-
-    /* ── STATUS BAR (video panel footer) ── */
-    .status-bar { margin-top: 20px; border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); }
-    .status-bar-title { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
-    .status-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--border); }
-    .status-row:last-child { border-bottom: none; }
-    .status-key { color: var(--muted); font-size: 11px; min-width: 100px; flex-shrink: 0; }
-    .status-val { font-family: var(--mono); font-size: 11px; color: var(--fg); word-break: break-all; }
-
-    .clip-search { background: var(--surface); border: 1px solid var(--border2); color: var(--fg); padding: 4px 10px; width: 200px; font-size: 12px; }
-    .clip-search:focus { border-color: var(--accent); }
-    .empty { color: var(--muted); padding: 30px; text-align: center; font-size: 12px; }
-    .toast { position: fixed; bottom: 12px; right: 12px; background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 6px 12px; font-size: 12px; opacity: 0; transform: translateY(6px); transition: opacity 0.15s, transform 0.15s; pointer-events: none; z-index: 100; }
-    .toast.show { opacity: 1; transform: translateY(0); }
-  </style>
+  <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
 <div class="shell">
-
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="logo">
-      <img style="height: 20px; width: 20px; margin-right: -2px;" src="src\img\icon.png" alt="">
+      <img src="/src/img/icon_titlebar.png" alt="">
       <span class="logo-text">clip<em>dat!</em></span>
-      <div class="version">v0.1a</div>
-      
+    </div>
+    <div class="version">v0.1a</div>
+    <div class="rec-indicator" id="rec-indicator">
+      <div class="rec-dot"></div>
+      recording
     </div>
   </div>
-
   <div class="body">
-
-    <!-- SIDEBAR -->
     <div class="sidebar">
       <nav class="nav">
         <div class="nav-group-label">general</div>
@@ -251,8 +54,6 @@
         </button>
       </div>
     </div>
-
-    <!-- MAIN -->
     <div class="main">
 
       <!-- DASHBOARD -->
@@ -265,21 +66,20 @@
           </div>
           <div class="card">
             <div class="card-label">storage used</div>
-            <div class="card-value">—</div>
+            <div class="card-value" id="dash-storage">—</div>
             <div class="card-sub">in clips folder</div>
           </div>
           <div class="card">
             <div class="card-label">buffer</div>
-            <div class="card-value">60 <span style="font-size:16px;color:var(--muted)">s</span></div>
+            <div class="card-value" id="dash-buffer">60 <span style="font-size:16px;color:var(--muted)">s</span></div>
             <div class="card-sub">max clip length</div>
           </div>
           <div class="card">
             <div class="card-label">status</div>
-            <div class="card-value" style="font-size:13px;color:var(--muted)" id="dash-status">idle</div>
-            <div class="card-sub">capture state</div>
+            <div class="card-value" style="font-size:13px" id="dash-status">idle</div>
+            <div class="card-sub" id="dash-status-sub">not recording</div>
           </div>
         </div>
-
         <div class="block">
           <div class="section-header"><span class="section-title">quick settings</span></div>
           <div class="toggle-row">
@@ -295,7 +95,6 @@
             <label class="toggle"><input type="checkbox" id="toggle-clip-sound" data-setting /><span class="toggle-track"></span></label>
           </div>
         </div>
-
         <div class="block">
           <div class="section-header">
             <span class="section-title">recent clips</span>
@@ -396,7 +195,6 @@
             </select>
           </div>
         </div>
-
         <div class="settings-section">
           <div class="settings-section-title">output</div>
           <div class="field-row">
@@ -429,26 +227,12 @@
             <label class="toggle"><input type="checkbox" id="toggle-open-folder" data-setting /><span class="toggle-track"></span></label>
           </div>
         </div>
-
-        <!-- STATUS BAR -->
         <div class="status-bar">
           <div class="status-bar-title">system status</div>
-          <div class="status-row">
-            <span class="status-key">backend</span>
-            <span class="status-val" id="status-backend-ok">—</span>
-          </div>
-          <div class="status-row">
-            <span class="status-key">ffmpeg</span>
-            <span class="status-val" id="status-ffmpeg-ok">—</span>
-          </div>
-          <div class="status-row">
-            <span class="status-key">ffmpeg path</span>
-            <span class="status-val" id="status-ffmpeg-path">—</span>
-          </div>
-          <div class="status-row">
-            <span class="status-key">clips folder</span>
-            <span class="status-val" id="status-clips-dir">—</span>
-          </div>
+          <div class="status-row"><span class="status-key">backend</span><span class="status-val" id="status-backend-ok">—</span></div>
+          <div class="status-row"><span class="status-key">ffmpeg</span><span class="status-val" id="status-ffmpeg-ok">—</span></div>
+          <div class="status-row"><span class="status-key">ffmpeg path</span><span class="status-val" id="status-ffmpeg-path">—</span></div>
+          <div class="status-row"><span class="status-key">clips folder</span><span class="status-val" id="status-clips-dir">—</span></div>
         </div>
       </div>
 
@@ -474,7 +258,6 @@
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 <script type="module" src="/src/main.js"></script>
 </body>

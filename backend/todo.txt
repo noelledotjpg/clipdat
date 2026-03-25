@@ -1,0 +1,11 @@
+// TODO:
+[ ] Add sound to saving clips
+[ ] Add sound filtering from recordings
+[ ] Add specific EXE clip capturing
+[ ] Game boxart for gallery mode
+[ ] Button to minimize the sidebar
+[ ] Custom clipping sounds?
+[ ] Allow user to rename games and supply a boxart if needed (three dots on the right side of the gallery card or on the category name in list mode)
+[ ] Themes? (maybe not)
+[ ] Fix temp chunks not being flushed 
+[ ] --

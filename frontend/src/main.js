@@ -1,6 +1,6 @@
 const BACKEND = 'http://localhost:9847'
 
-// ── api helpers ───────────────────────────────────────────────────
+// ── api ───────────────────────────────────────────────────────────
 
 async function api(path, method = 'GET', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } }
@@ -36,7 +36,7 @@ window.toast = function(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
 }
 
-// ── game color palette (fallback when no boxart) ──────────────────
+// ── game color palette ────────────────────────────────────────────
 
 const PALETTE = [
   ['#1a2a1a','#2d4a1e','#3a5c24'],
@@ -67,13 +67,69 @@ function clipThumb(clip) {
   </div>`
 }
 
+// ── recording state UI ────────────────────────────────────────────
+
+function setRecordingState(recording) {
+  isRecording = recording
+  const indicator = document.getElementById('rec-indicator')
+  const statusEl  = document.getElementById('dash-status')
+  const statusSub = document.getElementById('dash-status-sub')
+
+  if (indicator) indicator.classList.toggle('active', recording)
+
+  if (statusEl) {
+    statusEl.textContent = recording ? 'recording' : 'idle'
+    statusEl.style.color = recording ? 'var(--red)' : 'var(--muted)'
+  }
+  if (statusSub) {
+    statusSub.textContent = recording ? 'buffer active' : 'not recording'
+  }
+}
+
 // ── clips ─────────────────────────────────────────────────────────
 
 async function loadClips() {
   const data = await api('/clips')
   clips = data || []
+  updateDashboardStats()
   renderRecent()
   renderClips()
+}
+
+function updateDashboardStats() {
+  const today      = clips.filter(c => c.date.startsWith('today')).length
+  const totalBytes = clips.reduce((sum, c) => {
+    const mb = parseFloat(c.size)
+    return sum + (isNaN(mb) ? 0 : mb)
+  }, 0)
+
+  const storageEl = document.getElementById('dash-storage')
+  if (storageEl) {
+    if (totalBytes >= 1024) {
+      storageEl.innerHTML = `${(totalBytes / 1024).toFixed(1)} <span style="font-size:13px;color:var(--muted)">GB</span>`
+    } else {
+      storageEl.innerHTML = `${Math.round(totalBytes)} <span style="font-size:13px;color:var(--muted)">MB</span>`
+    }
+  }
+
+  const totalEl = document.getElementById('dash-total')
+  if (totalEl) totalEl.textContent = clips.length
+
+  const todayEl = document.getElementById('dash-today')
+  if (todayEl) todayEl.textContent = `+${today}`
+
+  // update buffer card from settings
+  if (settings) {
+    const buf = settings.capture.buffer_duration
+    const bufEl = document.getElementById('dash-buffer')
+    if (bufEl) {
+      if (buf >= 60) {
+        bufEl.innerHTML = `${buf / 60} <span style="font-size:16px;color:var(--muted)">m</span>`
+      } else {
+        bufEl.innerHTML = `${buf} <span style="font-size:16px;color:var(--muted)">s</span>`
+      }
+    }
+  }
 }
 
 function getGroups(filter) {
@@ -86,9 +142,13 @@ function getGroups(filter) {
 }
 
 async function deleteClip(filename) {
-  await api(`/clips/${encodeURIComponent(filename)}`, 'DELETE')
-  await loadClips()
-  toast('clip deleted')
+  const res = await api(`/clips/${encodeURIComponent(filename)}`, 'DELETE')
+  if (res?.ok) {
+    await loadClips()
+    toast('clip deleted')
+  } else {
+    toast('failed to delete clip')
+  }
 }
 
 async function showFile(filename) {
@@ -101,14 +161,11 @@ async function openFolder() {
 
 function renderRecent() {
   const tbody = document.getElementById('recent-tbody')
-  const today = clips.filter(c => c.date.startsWith('today')).length
-
-  document.getElementById('dash-total').textContent = clips.length
-  document.getElementById('dash-today').textContent = `+${today}`
+  if (!tbody) return
 
   const recent = clips.slice(0, 3)
   if (!recent.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty" style="text-align:left;padding:12px 10px">--</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:12px 10px;font-size:12px">no clips yet</td></tr>'
     return
   }
 
@@ -132,10 +189,22 @@ function renderRecent() {
 
 function renderGallery(filter) {
   const content = document.getElementById('clips-content')
+  if (!content) return
 
   if (currentGame) {
     const gameClips = clips.filter(c =>
       c.game === currentGame && (!filter || c.name.toLowerCase().includes(filter)))
+
+    if (!gameClips.length) {
+      content.innerHTML = `
+        <button class="back-btn" id="back-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          all games
+        </button>
+        <div class="empty">no clips match your search</div>`
+      document.getElementById('back-btn')?.addEventListener('click', () => { currentGame = null; renderGallery() })
+      return
+    }
 
     content.innerHTML = `
       <button class="back-btn" id="back-btn">
@@ -169,9 +238,7 @@ function renderGallery(filter) {
         `).join('')}
       </div>
     `
-    document.getElementById('back-btn').addEventListener('click', () => {
-      currentGame = null; renderGallery()
-    })
+    document.getElementById('back-btn')?.addEventListener('click', () => { currentGame = null; renderGallery() })
     content.querySelectorAll('[data-show]').forEach(btn =>
       btn.addEventListener('click', () => showFile(btn.dataset.show)))
     content.querySelectorAll('[data-del]').forEach(btn =>
@@ -181,7 +248,7 @@ function renderGallery(filter) {
 
   const groups = getGroups(filter)
   if (!Object.keys(groups).length) {
-    content.innerHTML = '<div class="empty">no clips yet!</div>'
+    content.innerHTML = '<div class="empty">no clips yet — start recording and save a clip</div>'
     return
   }
 
@@ -205,9 +272,11 @@ function renderGallery(filter) {
 
 function renderList(filter) {
   const content = document.getElementById('clips-content')
-  const groups  = getGroups(filter)
+  if (!content) return
+
+  const groups = getGroups(filter)
   if (!Object.keys(groups).length) {
-    content.innerHTML = '<div class="empty">no clips yet!</div>'
+    content.innerHTML = '<div class="empty">no clips yet</div>'
     return
   }
 
@@ -239,12 +308,12 @@ function renderList(filter) {
 }
 
 function renderClips() {
-  const filter = document.getElementById('clip-search').value.toLowerCase()
+  const filter = document.getElementById('clip-search')?.value.toLowerCase() || ''
   if (currentView === 'gallery') renderGallery(filter)
   else renderList(filter)
 }
 
-// ── settings ─────────────────────────────────────────────────────
+// ── settings ──────────────────────────────────────────────────────
 
 async function loadSettings() {
   settings = await api('/settings')
@@ -255,62 +324,46 @@ async function loadSettings() {
 function applySettingsToUI() {
   const s = settings
 
-  // general toggles (dashboard quick settings)
-  setToggle('toggle-record-on-launch',  s.general.record_on_launch)
-  setToggle('toggle-active-window',     s.general.active_window_only)
-  setToggle('toggle-clip-sound',        s.general.clip_save_sound)
+  setToggle('toggle-record-on-launch', s.general.record_on_launch)
+  setToggle('toggle-active-window',    s.general.active_window_only)
+  setToggle('toggle-clip-sound',       s.general.clip_save_sound)
 
-  // video settings
-  setSelect('sel-buffer',   String(s.capture.buffer_duration))
-  setSelect('sel-res',      s.capture.resolution)
-  setSelect('sel-fps',      String(s.capture.fps))
-  setSelect('sel-encoder',  s.capture.encoder)
-  setInput ('inp-folder',   s.output.folder)
-  setInput ('inp-filename', s.output.filename_template)
-  setSelect('sel-container',s.output.container)
-  setSelect('sel-quality',  s.output.quality)
+  setSelect('sel-buffer',    String(s.capture.buffer_duration))
+  setSelect('sel-res',       s.capture.resolution)
+  setSelect('sel-fps',       String(s.capture.fps))
+  setSelect('sel-encoder',   s.capture.encoder)
+  setInput ('inp-folder',    s.output.folder)
+  setInput ('inp-filename',  s.output.filename_template)
+  setSelect('sel-container', s.output.container)
+  setSelect('sel-quality',   s.output.quality)
   setToggle('toggle-open-folder', s.output.open_folder_after_save)
 
-  // hotkeys
-  setKeyBtn('key-save-clip',   s.hotkeys.save_clip)
-  setKeyBtn('key-toggle-rec',  s.hotkeys.toggle_recording)
-  setKeyBtn('key-open-browser',s.hotkeys.open_browser)
+  setKeyBtn('key-save-clip',    s.hotkeys.save_clip)
+  setKeyBtn('key-toggle-rec',   s.hotkeys.toggle_recording)
+  setKeyBtn('key-open-browser', s.hotkeys.open_browser)
 
-  // apps
-  renderTags('monitored-list', s.apps.monitored, 'monitored')
+  renderTags('monitored-list', s.apps.monitored,      'monitored')
   renderTags('excluded-list',  s.apps.audio_excluded, 'excluded')
 
-  // status bar in video panel
-  updateStatusBar()
+  updateDashboardStats()
 }
 
-function setToggle(id, val) {
-  const el = document.getElementById(id)
-  if (el) el.checked = !!val
-}
-
+function setToggle(id, val) { const el = document.getElementById(id); if (el) el.checked = !!val }
 function setSelect(id, val) {
   const el = document.getElementById(id)
   if (!el) return
-  for (const opt of el.options) {
-    if (opt.value === val) { opt.selected = true; return }
-  }
+  for (const opt of el.options) { if (opt.value === val) { opt.selected = true; return } }
 }
-
-function setInput(id, val) {
-  const el = document.getElementById(id)
-  if (el) el.value = val || ''
-}
-
-function setKeyBtn(id, val) {
-  const el = document.getElementById(id)
-  if (el) el.textContent = val || '—'
-}
+function setInput(id, val)  { const el = document.getElementById(id); if (el) el.value = val || '' }
+function setKeyBtn(id, val) { const el = document.getElementById(id); if (el) el.textContent = val || '—' }
+function getToggle(id) { const el = document.getElementById(id); return el ? el.checked : false }
+function getSelect(id) { const el = document.getElementById(id); return el ? el.value : '' }
+function getInput(id)  { const el = document.getElementById(id); return el ? el.value : '' }
 
 function renderTags(listId, items, type) {
   const list = document.getElementById(listId)
   if (!list) return
-  list.innerHTML = items.map(item => `
+  list.innerHTML = (items || []).map(item => `
     <div class="tag">${item}
       <button data-remove="${item}" data-type="${type}">✕</button>
     </div>
@@ -327,9 +380,9 @@ async function saveSettings() {
 function collectSettings() {
   if (!settings) return
 
-  settings.general.record_on_launch  = getToggle('toggle-record-on-launch')
+  settings.general.record_on_launch   = getToggle('toggle-record-on-launch')
   settings.general.active_window_only = getToggle('toggle-active-window')
-  settings.general.clip_save_sound   = getToggle('toggle-clip-sound')
+  settings.general.clip_save_sound    = getToggle('toggle-clip-sound')
 
   settings.capture.buffer_duration = parseInt(getSelect('sel-buffer')) || 60
   settings.capture.resolution      = getSelect('sel-res')
@@ -338,33 +391,18 @@ function collectSettings() {
 
   settings.output.folder                 = getInput('inp-folder')
   settings.output.filename_template      = getInput('inp-filename')
-  settings.output.container              = getSelect('sel-container')
-  settings.output.quality                = getSelect('sel-quality')
+  settings.output.container             = getSelect('sel-container')
+  settings.output.quality               = getSelect('sel-quality')
   settings.output.open_folder_after_save = getToggle('toggle-open-folder')
 
+  updateDashboardStats()
   saveSettings()
 }
 
-function getToggle(id) {
-  const el = document.getElementById(id)
-  return el ? el.checked : false
-}
-
-function getSelect(id) {
-  const el = document.getElementById(id)
-  return el ? el.value : ''
-}
-
-function getInput(id) {
-  const el = document.getElementById(id)
-  return el ? el.value : ''
-}
-
-// auto-save on any settings change
 function watchSettings() {
   document.querySelectorAll('[data-setting]').forEach(el => {
     el.addEventListener('change', collectSettings)
-    el.addEventListener('input', collectSettings)
+    el.addEventListener('input',  collectSettings)
   })
 }
 
@@ -384,7 +422,7 @@ function removeApp(name, type) {
 
 window.addApp = function(type) {
   const name = prompt('Enter executable name (e.g. cs2.exe)')
-  if (!name || !name.trim()) return
+  if (!name?.trim()) return
   const exe = name.trim()
   if (!settings) return
   if (type === 'monitored') {
@@ -403,53 +441,76 @@ window.addApp = function(type) {
 async function startRecording() {
   const res = await api('/capture/start', 'POST')
   if (res?.ok) {
-    isRecording = true
+    setRecordingState(true)
     toast('recording started')
   } else {
-    toast(res?.error || 'failed to start recording')
+    toast(res?.error || 'failed to start — check ffmpeg path')
   }
 }
 
 async function stopRecording() {
   await api('/capture/stop', 'POST')
-  isRecording = false
+  setRecordingState(false)
   toast('recording stopped')
 }
 
-// ── backend status ────────────────────────────────────────────────
-
-function updateStatusBar() {
-  const ffmpegOk   = document.getElementById('status-ffmpeg-ok')
-  const ffmpegPath = document.getElementById('status-ffmpeg-path')
-  const backendOk  = document.getElementById('status-backend-ok')
-  const clipsDir   = document.getElementById('status-clips-dir')
-  if (ffmpegOk)   ffmpegOk.textContent   = '—'
-  if (ffmpegPath) ffmpegPath.textContent  = '—'
-  if (backendOk)  backendOk.textContent   = '—'
-  if (clipsDir)   clipsDir.textContent    = '—'
+async function saveClip() {
+  const game = currentGame || 'unknown'
+  const res  = await api('/capture/clip', 'POST', { game })
+  if (res?.ok) {
+    toast(`clip saved — ${res.name}`)
+    await loadClips()
+    if (settings?.output.open_folder_after_save) openFolder()
+  } else {
+    toast(res?.error || 'failed to save clip')
+  }
 }
+
+// ── backend polling ───────────────────────────────────────────────
 
 async function pollBackend() {
   const data = await api('/status')
 
+  const backendOk  = document.getElementById('status-backend-ok')
   const ffmpegOk   = document.getElementById('status-ffmpeg-ok')
   const ffmpegPath = document.getElementById('status-ffmpeg-path')
-  const backendOk  = document.getElementById('status-backend-ok')
   const clipsDir   = document.getElementById('status-clips-dir')
 
   if (!data) {
-    if (backendOk)  { backendOk.textContent = 'offline'; backendOk.style.color = 'var(--red)' }
-    if (ffmpegOk)   { ffmpegOk.textContent  = '—';       ffmpegOk.style.color  = 'var(--muted)' }
+    if (backendOk) { backendOk.textContent = 'offline'; backendOk.style.color = 'var(--red)' }
+    if (ffmpegOk)  { ffmpegOk.textContent  = '—';       ffmpegOk.style.color  = 'var(--muted)' }
     return
   }
 
-  if (backendOk)  { backendOk.textContent  = 'ok';              backendOk.style.color  = 'var(--green)' }
-  if (ffmpegOk)   { ffmpegOk.textContent   = data.ffmpeg ? 'found' : 'missing'; ffmpegOk.style.color = data.ffmpeg ? 'var(--green)' : 'var(--red)' }
+  if (backendOk)  { backendOk.textContent  = 'ok';                                backendOk.style.color  = 'var(--green)' }
+  if (ffmpegOk)   { ffmpegOk.textContent   = data.ffmpeg ? 'found' : 'missing';   ffmpegOk.style.color   = data.ffmpeg ? 'var(--green)' : 'var(--red)' }
   if (ffmpegPath) { ffmpegPath.textContent  = data.ffmpeg_path || '—' }
-  if (clipsDir)   { clipsDir.textContent    = data.clips_dir || '—' }
+  if (clipsDir)   { clipsDir.textContent    = data.clips_dir   || '—' }
 
-  // sync recording state if it diverges
-  if (data.recording !== isRecording) isRecording = data.recording
+  if (data.recording !== isRecording) setRecordingState(data.recording)
+}
+
+// ── global hotkeys (within app window) ───────────────────────────
+
+function initGlobalHotkeys() {
+  window.addEventListener('keydown', e => {
+    // don't fire if user is typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+    // don't fire if a key rebind listener is active
+    if (document.querySelector('.key.listening')) return
+
+    if (!settings) return
+    const key = e.key === ' ' ? 'Space' : e.key.length === 1 ? e.key.toUpperCase() : e.key
+
+    if (key === settings.hotkeys.save_clip) {
+      e.preventDefault()
+      saveClip()
+    }
+    if (key === settings.hotkeys.toggle_recording) {
+      e.preventDefault()
+      if (isRecording) stopRecording(); else startRecording()
+    }
+  })
 }
 
 // ── hotkey rebinding ──────────────────────────────────────────────
@@ -459,7 +520,6 @@ function initKeyButtons() {
     key.addEventListener('click', () => {
       document.querySelectorAll('.key').forEach(k => k.classList.remove('listening'))
       key.classList.add('listening')
-      const prev = key.textContent
       key.textContent = '…'
       const handler = e => {
         e.preventDefault()
@@ -468,12 +528,10 @@ function initKeyButtons() {
         key.classList.remove('listening')
         window.removeEventListener('keydown', handler)
 
-        // save to settings
         if (!settings) return
-        const keyId = key.id
-        if (keyId === 'key-save-clip')    settings.hotkeys.save_clip         = label
-        if (keyId === 'key-toggle-rec')   settings.hotkeys.toggle_recording  = label
-        if (keyId === 'key-open-browser') settings.hotkeys.open_browser      = label
+        if (key.id === 'key-save-clip')    settings.hotkeys.save_clip        = label
+        if (key.id === 'key-toggle-rec')   settings.hotkeys.toggle_recording = label
+        if (key.id === 'key-open-browser') settings.hotkeys.open_browser     = label
         saveSettings()
         toast('keybind saved')
       }
@@ -489,8 +547,7 @@ function initNav() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'))
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
-      const panelId = 'panel-' + btn.dataset.panel
-      document.getElementById(panelId)?.classList.add('active')
+      document.getElementById('panel-' + btn.dataset.panel)?.classList.add('active')
       document.querySelector(`.nav-item[data-panel="${btn.dataset.panel}"]`)?.classList.add('active')
       if (btn.dataset.panel === 'clips') renderClips()
     })
@@ -500,19 +557,33 @@ function initNav() {
 // ── view toggle ───────────────────────────────────────────────────
 
 function initViewToggle() {
-  document.getElementById('view-gallery').addEventListener('click', () => {
+  document.getElementById('view-gallery')?.addEventListener('click', () => {
     currentView = 'gallery'; currentGame = null
     document.getElementById('view-gallery').classList.add('active')
     document.getElementById('view-list').classList.remove('active')
     renderClips()
   })
-  document.getElementById('view-list').addEventListener('click', () => {
+  document.getElementById('view-list')?.addEventListener('click', () => {
     currentView = 'list'; currentGame = null
     document.getElementById('view-list').classList.add('active')
     document.getElementById('view-gallery').classList.remove('active')
     renderClips()
   })
-  document.getElementById('clip-search').addEventListener('input', renderClips)
+  document.getElementById('clip-search')?.addEventListener('input', renderClips)
+}
+
+// ── tray (via Electron IPC) ───────────────────────────────────────
+
+function initTray() {
+  document.getElementById('tray-btn')?.addEventListener('click', () => {
+    // ipcRenderer is exposed via preload.js
+    if (window.ipcRenderer) {
+      window.ipcRenderer.send('minimize-to-tray')
+    } else {
+      // fallback for browser dev mode
+      toast('failed to minimize to tray err: dev mode or ipc fail')
+    }
+  })
 }
 
 // ── folder buttons ────────────────────────────────────────────────
@@ -522,10 +593,13 @@ function initFolderButtons() {
   document.getElementById('clips-folder-btn')?.addEventListener('click', openFolder)
 }
 
-// ── tray ──────────────────────────────────────────────────────────
+// ── record on launch ──────────────────────────────────────────────
 
-function initTray() {
-  document.getElementById('tray-btn')?.addEventListener('click', () => toast('minimized to tray'))
+async function handleRecordOnLaunch() {
+  if (settings?.general.record_on_launch) {
+    // small delay to let the UI fully render first
+    setTimeout(startRecording, 500)
+  }
 }
 
 // ── init ──────────────────────────────────────────────────────────
@@ -536,12 +610,16 @@ async function init() {
   initFolderButtons()
   initTray()
   initKeyButtons()
+  initGlobalHotkeys()
   watchSettings()
 
-  await Promise.all([loadSettings(), loadClips(), pollBackend()])
+  await Promise.all([loadSettings(), pollBackend()])
+  await loadClips()
+
+  handleRecordOnLaunch()
 
   setInterval(pollBackend, 5000)
-  setInterval(loadClips, 30000)  // refresh clip list every 30s
+  setInterval(loadClips,   30000)
 }
 
 init()

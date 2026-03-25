@@ -1,0 +1,29 @@
+{
+  "apps": {
+    "audio_excluded": [],
+    "monitored": []
+  },
+  "capture": {
+    "buffer_duration": 30,
+    "encoder": "h264_nvenc",
+    "fps": 60,
+    "resolution": "1920x1080"
+  },
+  "general": {
+    "active_window_only": false,
+    "clip_save_sound": true,
+    "record_on_launch": false
+  },
+  "hotkeys": {
+    "open_browser": "F10",
+    "save_clip": "F8",
+    "toggle_recording": "F9"
+  },
+  "output": {
+    "container": "mp4",
+    "filename_template": "{game}_{date}_{time}",
+    "folder": "C:\\Users\\User\\Videos\\ClipDat",
+    "open_folder_after_save": false,
+    "quality": "high"
+  }
+}

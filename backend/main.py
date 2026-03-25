@@ -148,7 +148,6 @@ def file_to_clip(filepath):
     else:
         date_str = mtime.strftime('%Y-%m-%d %H:%M')
 
-    # extract game from first underscore-separated segment
     parts = p.stem.split('_')
     game  = parts[0].replace('-', ' ').title() if parts else 'Unknown'
 
@@ -167,16 +166,13 @@ def file_to_clip(filepath):
 @app.route('/status')
 def status():
     s = settings_get()
-    recording = (
-        capture_process is not None and
-        capture_process.poll() is None
-    )
+    recording = capture_process is not None and capture_process.poll() is None
     return jsonify({
-        'status':     'ok',
-        'recording':  recording,
-        'ffmpeg':     FFMPEG.exists(),
+        'status':      'ok',
+        'recording':   recording,
+        'ffmpeg':      FFMPEG.exists(),
         'ffmpeg_path': str(FFMPEG),
-        'clips_dir':  s['output']['folder'],
+        'clips_dir':   s['output']['folder'],
     })
 
 @app.route('/settings', methods=['GET'])
@@ -204,6 +200,15 @@ def list_clips():
     )
     return jsonify([file_to_clip(f) for f in files])
 
+# NOTE: open-folder must be registered BEFORE /<filename> routes
+# to prevent Flask matching "open-folder" as a filename parameter.
+@app.route('/clips/open-folder', methods=['POST'])
+def open_clips_folder():
+    clips_dir = get_clips_dir()
+    clips_dir.mkdir(parents=True, exist_ok=True)
+    subprocess.Popen(['explorer', str(clips_dir)])
+    return jsonify({'ok': True})
+
 @app.route('/clips/<filename>', methods=['DELETE'])
 def delete_clip(filename):
     target = get_clips_dir() / filename
@@ -219,13 +224,6 @@ def show_clip(filename):
         subprocess.Popen(['explorer', '/select,', str(target)])
     return jsonify({'ok': True})
 
-@app.route('/clips/open-folder', methods=['POST'])
-def open_clips_folder():
-    clips_dir = get_clips_dir()
-    clips_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.Popen(['explorer', str(clips_dir)])
-    return jsonify({'ok': True})
-
 @app.route('/capture/start', methods=['POST'])
 def capture_start():
     global capture_process
@@ -233,7 +231,7 @@ def capture_start():
         if capture_process and capture_process.poll() is None:
             return jsonify({'ok': True, 'note': 'already recording'})
         if not FFMPEG.exists():
-            return jsonify({'error': 'ffmpeg not found'}), 500
+            return jsonify({'error': 'ffmpeg not found at ' + str(FFMPEG)}), 500
         args = build_ffmpeg_args(settings_get())
         capture_process = subprocess.Popen(
             args,
@@ -248,6 +246,10 @@ def capture_stop():
     with capture_lock:
         if capture_process and capture_process.poll() is None:
             capture_process.terminate()
+            try:
+                capture_process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                capture_process.kill()
             capture_process = None
     return jsonify({'ok': True})
 
@@ -272,7 +274,7 @@ def save_clip():
 
     chunks = sorted(CHUNK_DIR.glob('chunk_*.mp4'))
     if not chunks:
-        return jsonify({'error': 'no buffer chunks available'}), 400
+        return jsonify({'error': 'no buffer chunks — is recording active?'}), 400
 
     concat_file = CHUNK_DIR / '_concat.txt'
     with open(concat_file, 'w') as f:
@@ -289,7 +291,7 @@ def save_clip():
 
     if result.returncode != 0:
         return jsonify({
-            'error': 'ffmpeg concat failed',
+            'error':  'ffmpeg concat failed',
             'detail': result.stderr.decode(errors='replace')
         }), 500
 
@@ -298,7 +300,8 @@ def save_clip():
 # ── main ──────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    print(f'FFmpeg path: {FFMPEG}')
+    print(f'FFmpeg path:  {FFMPEG}')
     print(f'FFmpeg found: {FFMPEG.exists()}')
+    print(f'Clips folder: {settings_get()["output"]["folder"]}')
     print(f'Backend running on http://localhost:9847')
     app.run(port=9847, debug=False)
