@@ -2,3 +2,4 @@ backend/resources/ffmpeg.exe
 /backend/temp
 frontend/src/typescript.svg
 /backend/boxart
+/backend/previews

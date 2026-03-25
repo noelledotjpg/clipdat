@@ -259,7 +259,7 @@ input, select { font-family: inherit; font-size: 13px; outline: none; }
 .clip-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; transition: none; }
 .clip-card { background: var(--surface); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.15s; width: 100%;}
 .clip-card:hover { border-color: var(--border2); }
-.clip-thumb { width: 100%; aspect-ratio: 16/9; position: relative; overflow: hidden; }
+.clip-thumb { width: 100%; aspect-ratio: 16/9; position: relative; overflow: hidden; object-fit: cover; display: block;}
 .clip-thumb-bg { position: absolute; inset: 0; }
 .clip-thumb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; }
 .clip-card:hover .clip-thumb-overlay { opacity: 1; }
@@ -352,3 +352,6 @@ input, select { font-family: inherit; font-size: 13px; outline: none; }
 .boxart-preview { min-height: 40px; display: flex; align-items: center; }
 .modal-footer { display: flex; gap: 8px; padding: 10px 16px 14px; }
 .del-btn:hover { color: var(--red) !important; border-color: var(--red) !important; }
+
+/* ── QUICK SETTINGS: allow select in a toggle-row ── */
+.toggle-row .ctrl-select { min-width: 110px; }

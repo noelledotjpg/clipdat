@@ -88,6 +88,36 @@
             <div class="card-sub" id="dash-status-sub">not recording</div>
           </div>
         </div>
+
+        <div class="block" id="dashboard-quick-settings">
+          <div class="section-header"><span class="section-title">quick settings</span></div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">start buffering on launch</div><div class="toggle-sub">begin capturing automatically when clipdat opens</div></div>
+            <label class="toggle"><input type="checkbox" id="qs-record-on-launch" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">active window only</div><div class="toggle-sub">pause capture when monitored app loses focus</div></div>
+            <label class="toggle"><input type="checkbox" id="qs-active-window" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">clip save sound</div><div class="toggle-sub">play a sound when saving a clip</div></div>
+            <label class="toggle"><input type="checkbox" id="qs-clip-sound" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">recording sounds</div><div class="toggle-sub">play sounds when starting and stopping a recording</div></div>
+            <label class="toggle"><input type="checkbox" id="qs-rec-sounds" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">buffer duration</div><div class="toggle-sub">max length of a saved clip</div></div>
+            <select class="ctrl-select" id="qs-buffer" data-setting>
+              <option value="30">30 seconds</option>
+              <option value="60">60 seconds</option>
+              <option value="120">2 minutes</option>
+              <option value="300">5 minutes</option>
+            </select>
+          </div>
+        </div>
+
         <div class="block">
           <div class="section-header">
             <span class="section-title">recent clips</span>
@@ -129,6 +159,29 @@
 
       <!-- PREFERENCES -->
       <div class="panel" id="panel-preferences">
+
+        <div class="settings-section">
+          <div class="settings-section-title">startup</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">start buffering on launch</div><div class="toggle-sub">begin capturing automatically when clipdat opens</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-record-on-launch" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">open on system startup</div><div class="toggle-sub">launch clipdat when Windows starts</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-open-on-startup" data-setting /><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">start minimized to tray</div><div class="toggle-sub">open directly to tray without showing the window</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-start-minimized" data-setting /><span class="toggle-track"></span></label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">appearance</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">native titlebar</div><div class="toggle-sub">use the system window titlebar instead of a custom one</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-native-titlebar" data-setting /><span class="toggle-track"></span></label>
+          </div>
+        </div>
         <div class="settings-section">
           <div class="settings-section-title">capture</div>
           <div class="toggle-row">

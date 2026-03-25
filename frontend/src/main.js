@@ -65,11 +65,59 @@ function gameCover(gameKey, displayName) {
   </div>`
 }
 
-function clipThumb(clip) {
+function clipThumbHtml(clip) {
+  // use actual thumbnail preview if available, else gradient placeholder
+  if (clip.preview) {
+    return `<img src="${BACKEND}${clip.preview}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="${clip.name}" onerror="this.parentElement.innerHTML='${clipThumbFallback(clip)}'" />`
+  }
+  return clipThumbFallback(clip)
+}
+
+function clipThumbFallback(clip) {
   const cols = gameColors(clip.game)
-  return `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${cols[0]},${cols[2]});display:flex;align-items:center;justify-content:center">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
-  </div>`
+  return `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${cols[0]},${cols[2]});display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg></div>`
+}
+
+// ── lazy duration loading ─────────────────────────────────────────
+
+// Map of filename -> duration string, populated lazily
+const durCache = {}
+
+async function loadDurations(clipList) {
+  // Load durations for clips that don't have them yet, in small batches
+  const missing = clipList.filter(c => !c.dur && !durCache[c.filename])
+  if (!missing.length) return
+
+  // fetch up to 5 at a time to avoid flooding flask
+  const BATCH = 5
+  for (let i = 0; i < missing.length; i += BATCH) {
+    const batch = missing.slice(i, i + BATCH)
+    await Promise.all(batch.map(async c => {
+      const res = await api(`/clips/${encodeURIComponent(c.filename)}/preview`)
+      // also trigger preview generation while we're at it
+    }))
+  }
+}
+
+function durLabel(clip) {
+  return clip.dur || durCache[clip.filename] || '?:??'
+}
+
+// Poll for previews that are being generated in background
+async function pollPreviews() {
+  const needPreview = clips.filter(c => !c.preview)
+  if (!needPreview.length) return
+
+  let updated = false
+  await Promise.all(needPreview.slice(0, 5).map(async c => {
+    const res = await api(`/clips/${encodeURIComponent(c.filename)}/preview`)
+    if (res?.preview) {
+      c.preview = res.preview
+      updated = true
+    }
+  }))
+
+  if (updated) renderClips()
 }
 
 // ── recording state UI ────────────────────────────────────────────
@@ -81,14 +129,8 @@ function setRecordingState(recording) {
   const statusSub = document.getElementById('dash-status-sub')
 
   if (indicator) indicator.classList.toggle('active', recording)
-
-  if (statusEl) {
-    statusEl.textContent = recording ? 'recording' : 'idle'
-    statusEl.style.color = recording ? 'var(--red)' : 'var(--muted)'
-  }
-  if (statusSub) {
-    statusSub.textContent = recording ? 'buffer active' : 'not recording'
-  }
+  if (statusEl)  { statusEl.textContent = recording ? 'recording' : 'idle'; statusEl.style.color = recording ? 'var(--red)' : 'var(--muted)' }
+  if (statusSub) { statusSub.textContent = recording ? 'buffer active' : 'not recording' }
 }
 
 // ── clips ─────────────────────────────────────────────────────────
@@ -100,22 +142,19 @@ async function loadClips() {
   updateDashboardStats()
   renderRecent()
   renderClips()
+  // start polling for any previews still being generated
+  setTimeout(pollPreviews, 3000)
 }
 
 function updateDashboardStats() {
   const today      = clips.filter(c => c.date.startsWith('today')).length
-  const totalBytes = clips.reduce((sum, c) => {
-    const mb = parseFloat(c.size)
-    return sum + (isNaN(mb) ? 0 : mb)
-  }, 0)
+  const totalBytes = clips.reduce((sum, c) => sum + (parseFloat(c.size) || 0), 0)
 
   const storageEl = document.getElementById('dash-storage')
   if (storageEl) {
-    if (totalBytes >= 1024) {
-      storageEl.innerHTML = `${(totalBytes / 1024).toFixed(1)} <span style="font-size:13px;color:var(--muted)">GB</span>`
-    } else {
-      storageEl.innerHTML = `${Math.round(totalBytes)} <span style="font-size:13px;color:var(--muted)">MB</span>`
-    }
+    storageEl.innerHTML = totalBytes >= 1024
+      ? `${(totalBytes / 1024).toFixed(1)} <span style="font-size:13px;color:var(--muted)">GB</span>`
+      : `${Math.round(totalBytes)} <span style="font-size:13px;color:var(--muted)">MB</span>`
   }
 
   const totalEl = document.getElementById('dash-total')
@@ -125,14 +164,12 @@ function updateDashboardStats() {
   if (todayEl) todayEl.textContent = `+${today}`
 
   if (settings) {
-    const buf = settings.capture.buffer_duration
+    const buf   = settings.capture.buffer_duration
     const bufEl = document.getElementById('dash-buffer')
     if (bufEl) {
-      if (buf >= 60) {
-        bufEl.innerHTML = `${buf / 60} <span style="font-size:16px;color:var(--muted)">m</span>`
-      } else {
-        bufEl.innerHTML = `${buf} <span style="font-size:16px;color:var(--muted)">s</span>`
-      }
+      bufEl.innerHTML = buf >= 60
+        ? `${buf / 60} <span style="font-size:16px;color:var(--muted)">m</span>`
+        : `${buf} <span style="font-size:16px;color:var(--muted)">s</span>`
     }
   }
 }
@@ -148,12 +185,8 @@ function getGroups(filter) {
 
 async function deleteClip(filename) {
   const res = await api(`/clips/${encodeURIComponent(filename)}`, 'DELETE')
-  if (res?.ok) {
-    await loadClips()
-    toast('clip deleted')
-  } else {
-    toast('failed to delete clip')
-  }
+  if (res?.ok) { await loadClips(); toast('clip deleted') }
+  else toast('failed to delete clip')
 }
 
 async function showFile(filename) {
@@ -177,7 +210,7 @@ function renderRecent() {
   tbody.innerHTML = recent.map(c => `<tr>
     <td class="td-name">${c.name}</td>
     <td class="td-game">${c.game}</td>
-    <td class="td-dur">${c.dur}</td>
+    <td class="td-dur">${durLabel(c)}</td>
     <td class="td-size">${c.size}</td>
     <td class="td-date">${c.date}</td>
     <td class="td-act">
@@ -211,7 +244,7 @@ function renderGallery(filter) {
       return
     }
 
-    const gameKey = gameClips[0]?.game_key || currentGame;
+    const gameKey = gameClips[0]?.game_key || currentGame
     content.innerHTML = `
       <button class="back-btn" id="back-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
@@ -220,48 +253,42 @@ function renderGallery(filter) {
       <div class="game-view-header">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="game-view-title">${currentGame}</div>
-            <div class="game-view-count">${gameClips.length} clip${gameClips.length !== 1 ? "s" : ""}</div>
-          </div>
-            <button class="three-dots-btn" data-edit-game="${gameKey}" title="edit game">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-            </button>
-          </div>
+          <div class="game-view-count">${gameClips.length} clip${gameClips.length !== 1 ? 's' : ''}</div>
         </div>
+        <button class="three-dots-btn" data-edit-game="${gameKey}" title="edit game">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
       </div>
       <div class="clip-gallery">
-        ${gameClips
-          .map(
-            (c) => `
-          <div class="clip-card">
-            <div class="clip-thumb">
-              <div class="clip-thumb-bg">${clipThumb(c)}</div>
-              <div class="clip-thumb-overlay">${PLAY_ICON}</div>
-              <div class="clip-duration">${c.dur}</div>
-            </div>
-            <div class="clip-card-footer">
-              <div class="clip-card-name">${c.name}</div>
-              <div class="clip-card-meta">
-                <span>${c.date}</span>
-                <span>${c.size}</span>
-              </div>
-              <div class="clip-card-actions">
-                <button class="clip-action-btn" data-show="${c.filename}">show file</button>
-                <button class="clip-action-btn del" data-del="${c.filename}">delete</button>
-              </div>
-            </div>
-          </div>
-        `,
-          )
-          .join("")}
+  ${gameClips.map(c => `
+    <div class="clip-card">
+      <div class="clip-thumb">
+        <img src="${c.preview || '/previews/placeholder.jpg'}" class="clip-thumb-img" />
+        <div class="clip-thumb-overlay">${PLAY_ICON}</div>
+        <div class="clip-duration">${durLabel(c)}</div>
       </div>
-    `;
+      <div class="clip-card-footer">
+        <div class="clip-card-name">${c.name}</div>
+        <div class="clip-card-meta">
+          <span>${c.date}</span>
+          <span>${c.size}</span>
+        </div>
+        <div class="clip-card-actions">
+          <button class="clip-action-btn" data-show="${c.filename}">show file</button>
+          <button class="clip-action-btn del" data-del="${c.filename}">delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('')}
+</div>
+    `
     document.getElementById('back-btn')?.addEventListener('click', () => { currentGame = null; renderGallery() })
     content.querySelectorAll('[data-show]').forEach(btn =>
       btn.addEventListener('click', () => showFile(btn.dataset.show)))
     content.querySelectorAll('[data-del]').forEach(btn =>
       btn.addEventListener('click', () => deleteClip(btn.dataset.del)))
     content.querySelectorAll('[data-edit-game]').forEach(btn =>
-      btn.addEventListener('click', (e) => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
+      btn.addEventListener('click', e => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
     return
   }
 
@@ -298,21 +325,21 @@ function renderGallery(filter) {
   content.querySelectorAll('.game-card').forEach(card =>
     card.addEventListener('click', () => { currentGame = card.dataset.game; renderGallery() }))
   content.querySelectorAll('[data-edit-game]').forEach(btn =>
-    btn.addEventListener('click', (e) => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
+    btn.addEventListener('click', e => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
 }
 
 function renderList(filter) {
   const content = document.getElementById('clips-content')
   if (!content) return
 
-  const groups = getGroups(filter)
+  const groups    = getGroups(filter)
+  const gameKeyMap = {}
+  clips.forEach(c => { if (c.game_key) gameKeyMap[c.game] = c.game_key })
+
   if (!Object.keys(groups).length) {
     content.innerHTML = '<div class="empty">no clips yet</div>'
     return
   }
-
-  const gameKeyMap = {}
-  clips.forEach(c => { if (c.game_key) gameKeyMap[c.game] = c.game_key })
 
   content.innerHTML = Object.entries(groups).map(([game, cs]) => {
     const gameKey = gameKeyMap[game] || game
@@ -328,7 +355,7 @@ function renderList(filter) {
         <thead><tr><th>name</th><th>dur</th><th>size</th><th>date</th><th></th></tr></thead>
         <tbody>${cs.map(c => `<tr>
           <td class="td-name">${c.name}</td>
-          <td class="td-dur">${c.dur}</td>
+          <td class="td-dur">${durLabel(c)}</td>
           <td class="td-size">${c.size}</td>
           <td class="td-date">${c.date}</td>
           <td class="td-act">
@@ -337,8 +364,8 @@ function renderList(filter) {
           </td>
         </tr>`).join('')}</tbody>
       </table>
-    </div>
-  `}).join('')
+    </div>`
+  }).join('')
 
   content.querySelectorAll('[data-show]').forEach(btn =>
     btn.addEventListener('click', () => showFile(btn.dataset.show)))
@@ -365,12 +392,17 @@ async function loadSettings() {
 function applySettingsToUI() {
   const s = settings
 
-  setToggle('toggle-active-window',  s.general.active_window_only)
-  setToggle('toggle-clip-sound',     s.general.clip_save_sound)
-  setToggle('toggle-rec-sounds',     s.general.rec_sounds)
-  setToggle('toggle-open-folder',    s.output.open_folder_after_save)
-  setToggle('toggle-record-desktop', s.apps?.record_desktop ?? true)
+  // preferences panel
+  setToggle('toggle-record-on-launch', s.general.record_on_launch)
+  setToggle('toggle-start-minimized',  s.general.start_minimized)
+  setToggle('toggle-open-on-startup',  s.general.open_on_startup)
+  setToggle('toggle-native-titlebar',  s.general.native_titlebar)
+  setToggle('toggle-active-window',    s.general.active_window_only)
+  setToggle('toggle-clip-sound',       s.general.clip_save_sound)
+  setToggle('toggle-rec-sounds',       s.general.rec_sounds)
+  setToggle('toggle-open-folder',      s.output.open_folder_after_save)
 
+  // video panel
   setSelect('sel-buffer',    String(s.capture.buffer_duration))
   setSelect('sel-res',       s.capture.resolution)
   setSelect('sel-fps',       String(s.capture.fps))
@@ -380,12 +412,22 @@ function applySettingsToUI() {
   setSelect('sel-container', s.output.container)
   setSelect('sel-quality',   s.output.quality)
 
+  // hotkeys
   setKeyBtn('key-save-clip',    s.hotkeys.save_clip)
   setKeyBtn('key-toggle-rec',   s.hotkeys.toggle_recording)
   setKeyBtn('key-open-browser', s.hotkeys.open_browser)
 
+  // apps
   renderTags('monitored-list', s.apps.monitored,      'monitored')
   renderTags('excluded-list',  s.apps.audio_excluded, 'excluded')
+  setToggle('toggle-record-desktop', s.apps?.record_desktop ?? true)
+
+  // dashboard quick settings (mirrors preferences)
+  setToggle('qs-record-on-launch', s.general.record_on_launch)
+  setToggle('qs-active-window',    s.general.active_window_only)
+  setToggle('qs-clip-sound',       s.general.clip_save_sound)
+  setToggle('qs-rec-sounds',       s.general.rec_sounds)
+  setSelect('qs-buffer',           String(s.capture.buffer_duration))
 
   updateDashboardStats()
 }
@@ -422,11 +464,15 @@ async function saveSettings() {
 function collectSettings() {
   if (!settings) return
 
-  settings.general.active_window_only = getToggle('toggle-active-window')
-  settings.general.clip_save_sound    = getToggle('toggle-clip-sound')
-  settings.general.rec_sounds         = getToggle('toggle-rec-sounds')
+  settings.general.record_on_launch   = getToggle('toggle-record-on-launch') || getToggle('qs-record-on-launch')
+  settings.general.start_minimized    = getToggle('toggle-start-minimized')
+  settings.general.open_on_startup    = getToggle('toggle-open-on-startup')
+  settings.general.native_titlebar    = getToggle('toggle-native-titlebar')
+  settings.general.active_window_only = getToggle('toggle-active-window') || getToggle('qs-active-window')
+  settings.general.clip_save_sound    = getToggle('toggle-clip-sound') || getToggle('qs-clip-sound')
+  settings.general.rec_sounds         = getToggle('toggle-rec-sounds') || getToggle('qs-rec-sounds')
 
-  settings.capture.buffer_duration = parseInt(getSelect('sel-buffer')) || 60
+  settings.capture.buffer_duration = parseInt(getSelect('sel-buffer') || getSelect('qs-buffer')) || 60
   settings.capture.resolution      = getSelect('sel-res')
   settings.capture.fps             = parseInt(getSelect('sel-fps')) || 60
   settings.capture.encoder         = getSelect('sel-encoder')
@@ -439,6 +485,12 @@ function collectSettings() {
 
   if (!settings.apps) settings.apps = {}
   settings.apps.record_desktop = getToggle('toggle-record-desktop')
+
+  // keep quick settings in sync with preferences panel
+  setToggle('qs-record-on-launch', settings.general.record_on_launch)
+  setToggle('qs-active-window',    settings.general.active_window_only)
+  setToggle('qs-clip-sound',       settings.general.clip_save_sound)
+  setToggle('qs-rec-sounds',       settings.general.rec_sounds)
 
   updateDashboardStats()
   saveSettings()
@@ -485,12 +537,8 @@ window.addApp = function(type) {
 
 async function startRecording() {
   const res = await api('/capture/start', 'POST')
-  if (res?.ok) {
-    setRecordingState(true)
-    toast('recording started')
-  } else {
-    toast(res?.error || 'failed to start — check ffmpeg path')
-  }
+  if (res?.ok) { setRecordingState(true); toast('recording started') }
+  else toast(res?.error || 'failed to start — check ffmpeg path')
 }
 
 async function stopRecording() {
@@ -527,15 +575,15 @@ async function pollBackend() {
     return
   }
 
-  if (backendOk)  { backendOk.textContent  = 'ok';                                backendOk.style.color  = 'var(--green)' }
-  if (ffmpegOk)   { ffmpegOk.textContent   = data.ffmpeg ? 'found' : 'missing';   ffmpegOk.style.color   = data.ffmpeg ? 'var(--green)' : 'var(--red)' }
-  if (ffmpegPath) { ffmpegPath.textContent  = data.ffmpeg_path || '—' }
-  if (clipsDir)   { clipsDir.textContent    = data.clips_dir   || '—' }
+  if (backendOk)  { backendOk.textContent = 'ok';                              backendOk.style.color  = 'var(--green)' }
+  if (ffmpegOk)   { ffmpegOk.textContent  = data.ffmpeg ? 'found' : 'missing'; ffmpegOk.style.color   = data.ffmpeg ? 'var(--green)' : 'var(--red)' }
+  if (ffmpegPath) { ffmpegPath.textContent = data.ffmpeg_path || '—' }
+  if (clipsDir)   { clipsDir.textContent   = data.clips_dir   || '—' }
 
   if (data.recording !== isRecording) setRecordingState(data.recording)
 }
 
-// ── global hotkeys (within app window) ───────────────────────────
+// ── global hotkeys ────────────────────────────────────────────────
 
 function initGlobalHotkeys() {
   window.addEventListener('keydown', e => {
@@ -546,18 +594,11 @@ function initGlobalHotkeys() {
     const key = e.key === ' ' ? 'Space' : e.key.length === 1 ? e.key.toUpperCase() : e.key
 
     if (key === settings.hotkeys.save_clip) {
-      e.preventDefault()
-      saveClip()
+      e.preventDefault(); saveClip()
     }
     if (key === settings.hotkeys.toggle_recording) {
       e.preventDefault()
       if (isRecording) stopRecording(); else startRecording()
-    }
-    // F10 (open_browser hotkey) — bring window to front / focus
-    // It does NOT toggle recording; it just focuses the window
-    if (key === settings.hotkeys.open_browser) {
-      e.preventDefault()
-      // window is already focused if this fired; nothing extra needed in renderer
     }
   })
 }
@@ -576,7 +617,6 @@ function initKeyButtons() {
         key.textContent = label
         key.classList.remove('listening')
         window.removeEventListener('keydown', handler)
-
         if (!settings) return
         if (key.id === 'key-save-clip')    settings.hotkeys.save_clip        = label
         if (key.id === 'key-toggle-rec')   settings.hotkeys.toggle_recording = label
@@ -621,15 +661,12 @@ function initViewToggle() {
   document.getElementById('clip-search')?.addEventListener('input', renderClips)
 }
 
-// ── tray (via Electron IPC) ───────────────────────────────────────
+// ── tray ──────────────────────────────────────────────────────────
 
 function initTray() {
   document.getElementById('tray-btn')?.addEventListener('click', () => {
-    if (window.ipcRenderer) {
-      window.ipcRenderer.send('minimize-to-tray')
-    } else {
-      toast('failed to minimize to tray err: dev mode or ipc fail')
-    }
+    if (window.ipcRenderer) window.ipcRenderer.send('minimize-to-tray')
+    else toast('minimize to tray (Electron only)')
   })
 }
 
@@ -647,21 +684,19 @@ function initSidebarCollapse() {
   const sidebar = document.getElementById('sidebar')
   if (!btn || !sidebar) return
 
-  const ICON_COLLAPSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>`
-  const ICON_EXPAND   = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>`
+  const ICON_COLLAPSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`
+  const ICON_EXPAND   = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`
 
   const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true'
   if (savedCollapsed) sidebar.classList.add('collapsed')
   btn.innerHTML = savedCollapsed ? ICON_EXPAND : ICON_COLLAPSE
-  btn.title = savedCollapsed ? 'expand sidebar' : 'collapse sidebar'
+  btn.title     = savedCollapsed ? 'expand sidebar' : 'collapse sidebar'
 
   btn.addEventListener('click', () => {
     sidebar.classList.toggle('collapsed')
     const collapsed = sidebar.classList.contains('collapsed')
     btn.title     = collapsed ? 'expand sidebar' : 'collapse sidebar'
     btn.innerHTML = collapsed ? ICON_EXPAND : ICON_COLLAPSE
-
-    // Save state
     localStorage.setItem('sidebar-collapsed', collapsed)
   })
 }
@@ -672,7 +707,7 @@ let modalGameKey = null
 
 function openGameModal(gameKey) {
   modalGameKey = gameKey
-  const meta = gameMeta[gameKey] || {}
+  const meta   = gameMeta[gameKey] || {}
 
   document.getElementById('game-modal-name').value = meta.display_name || gameKey
 
@@ -698,13 +733,8 @@ async function saveGameModal() {
   if (!newName) { toast('name cannot be empty'); return }
 
   const res = await api(`/games/${encodeURIComponent(modalGameKey)}/rename`, 'POST', { name: newName })
-  if (res?.ok) {
-    toast('game updated')
-    await loadClips()
-    closeGameModal()
-  } else {
-    toast('failed to save')
-  }
+  if (res?.ok) { toast('game updated'); await loadClips(); closeGameModal() }
+  else toast('failed to save')
 }
 
 function initGameModal() {
@@ -722,15 +752,11 @@ function initGameModal() {
     if (res?.ok) {
       toast('box art updated')
       gameMeta = await api('/games/meta') || {}
-      const meta = gameMeta[modalGameKey] || {}
+      const meta    = gameMeta[modalGameKey] || {}
       const preview = document.getElementById('boxart-preview')
-      if (meta.boxart) {
-        preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
-      }
+      if (meta.boxart) preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
       renderClips()
-    } else {
-      toast('failed to fetch image')
-    }
+    } else toast('failed to fetch image')
   })
 
   document.getElementById('boxart-file-btn')?.addEventListener('click', () => {
@@ -745,15 +771,11 @@ function initGameModal() {
       if (res?.ok) {
         toast('box art uploaded')
         gameMeta = await api('/games/meta') || {}
-        const meta = gameMeta[modalGameKey] || {}
+        const meta    = gameMeta[modalGameKey] || {}
         const preview = document.getElementById('boxart-preview')
-        if (meta.boxart) {
-          preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
-        }
+        if (meta.boxart) preview.innerHTML = `<img src="${BACKEND}${meta.boxart}?t=${Date.now()}" style="max-height:120px;border-radius:6px;object-fit:cover" />`
         renderClips()
-      } else {
-        toast('upload failed')
-      }
+      } else toast('upload failed')
     }
     reader.readAsDataURL(file)
     e.target.value = ''
@@ -775,6 +797,14 @@ function initGameModal() {
   })
 }
 
+// ── record on launch ──────────────────────────────────────────────
+
+async function handleRecordOnLaunch() {
+  if (settings?.general.record_on_launch) {
+    setTimeout(startRecording, 800)
+  }
+}
+
 // ── init ──────────────────────────────────────────────────────────
 
 async function init() {
@@ -791,8 +821,11 @@ async function init() {
   await Promise.all([loadSettings(), pollBackend()])
   await loadClips()
 
+  handleRecordOnLaunch()
+
   setInterval(pollBackend, 5000)
   setInterval(loadClips,   30000)
+  setInterval(pollPreviews, 10000)  // keep checking for new thumbnails
 }
 
 init()

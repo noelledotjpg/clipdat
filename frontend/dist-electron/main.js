@@ -48,7 +48,7 @@ function createWindow() {
   const preloadPath = process.env.ELECTRON_PRELOAD || path.join(__dirname$1, "preload.js");
   win = new BrowserWindow({
     width: 1200,
-    height: 680,
+    height: 720,
     minWidth: 1e3,
     minHeight: 500,
     frame: true,

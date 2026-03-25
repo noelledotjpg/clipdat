@@ -1,7 +1,8 @@
 {
   "apps": {
     "audio_excluded": [],
-    "monitored": []
+    "monitored": [],
+    "record_desktop": true
   },
   "capture": {
     "buffer_duration": 30,
@@ -12,7 +13,11 @@
   "general": {
     "active_window_only": false,
     "clip_save_sound": true,
-    "record_on_launch": false
+    "native_titlebar": true,
+    "open_on_startup": false,
+    "rec_sounds": true,
+    "record_on_launch": true,
+    "start_minimized": false
   },
   "hotkeys": {
     "open_browser": "F10",

@@ -6,7 +6,6 @@ import threading
 import math
 import base64
 import urllib.request
-import urllib.parse
 from pathlib import Path
 from datetime import datetime
 from flask import Flask, jsonify, request
@@ -22,18 +21,21 @@ def get_base():
         return Path(sys._MEIPASS)
     return Path(__file__).parent
 
-BASE           = get_base()
-FFMPEG         = BASE / 'resources' / 'ffmpeg.exe'
-FFPROBE        = BASE / 'resources' / 'ffprobe.exe'
-SETTINGS_FILE  = BASE / 'settings.json'
-CHUNK_DIR      = BASE / 'temp'
-BOXART_DIR     = BASE / 'boxart'
-GAME_META_FILE = BASE / 'game_meta.json'
-SOUND_CLIP     = BASE / 'resources' / 'clip_saved.wav'
+BASE            = get_base()
+FFMPEG          = BASE / 'resources' / 'ffmpeg.exe'
+FFPROBE         = BASE / 'resources' / 'ffprobe.exe'
+SETTINGS_FILE   = BASE / 'settings.json'
+CHUNK_DIR       = BASE / 'temp'
+BOXART_DIR      = BASE / 'boxart'
+PREVIEW_DIR     = BASE / 'previews'
+GAME_META_FILE  = BASE / 'game_meta.json'
+SOUND_CLIP      = BASE / 'resources' / 'clip_saved.wav'
 SOUND_REC_START = BASE / 'resources' / 'rec_start.wav'
 SOUND_REC_STOP  = BASE / 'resources' / 'rec_stop.wav'
+
 CHUNK_DIR.mkdir(exist_ok=True)
 BOXART_DIR.mkdir(exist_ok=True)
+PREVIEW_DIR.mkdir(exist_ok=True)
 
 def get_clips_dir():
     return Path(settings_get()['output']['folder'])
@@ -42,31 +44,36 @@ def get_clips_dir():
 
 DEFAULT_SETTINGS = {
     'general': {
+        'record_on_launch':   False,
+        'start_minimized':    False,
+        'open_on_startup':    False,
+        'native_titlebar':    True,
         'active_window_only': False,
-        'clip_save_sound': True,
-        'rec_sounds': True,
+        'clip_save_sound':    True,
+        'rec_sounds':         True,
     },
     'capture': {
         'buffer_duration': 60,
-        'resolution': '1920x1080',
-        'fps': 60,
-        'encoder': 'h264_nvenc',
+        'resolution':      '1920x1080',
+        'fps':             60,
+        'encoder':         'h264_nvenc',
     },
     'output': {
-        'folder': str(Path.home() / 'Videos' / 'ClipDat'),
-        'filename_template': '{game}_{date}_{time}',
-        'container': 'mp4',
-        'quality': 'high',
+        'folder':                 str(Path.home() / 'Videos' / 'ClipDat'),
+        'filename_template':      '{game}_{date}_{time}',
+        'container':              'mp4',
+        'quality':                'high',
         'open_folder_after_save': False,
     },
     'hotkeys': {
-        'save_clip': 'F8',
+        'save_clip':        'F8',
         'toggle_recording': 'F9',
-        'open_browser': 'F10',
+        'open_browser':     'F10',
     },
     'apps': {
-        'monitored': [],
+        'monitored':      [],
         'audio_excluded': [],
+        'record_desktop': True,
     }
 }
 
@@ -90,7 +97,7 @@ def settings_save(data):
     with open(SETTINGS_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
-# ── game metadata (custom names + boxart) ─────────────────────────
+# ── game metadata ─────────────────────────────────────────────────
 
 def game_meta_get():
     if GAME_META_FILE.exists():
@@ -118,7 +125,6 @@ def _play(path):
         pass
 
 def play_sound(kind):
-    """kind: 'clip' | 'rec_start' | 'rec_stop'"""
     s = settings_get().get('general', {})
     if kind == 'clip' and s.get('clip_save_sound', True):
         threading.Thread(target=_play, args=(SOUND_CLIP,), daemon=True).start()
@@ -129,18 +135,13 @@ def play_sound(kind):
 # ── flush stale temp chunks ───────────────────────────────────────
 
 def flush_temp_chunks():
-    """Delete any leftover chunks from a previous session on startup."""
     for f in CHUNK_DIR.glob('chunk_*.mp4'):
-        try:
-            f.unlink()
-        except Exception:
-            pass
+        try: f.unlink()
+        except Exception: pass
     concat = CHUNK_DIR / '_concat.txt'
     if concat.exists():
-        try:
-            concat.unlink()
-        except Exception:
-            pass
+        try: concat.unlink()
+        except Exception: pass
 
 # ── capture state ─────────────────────────────────────────────────
 
@@ -179,26 +180,29 @@ def build_ffmpeg_args(s):
 # ── clip metadata ─────────────────────────────────────────────────
 
 def generate_preview(filepath):
-    out_file = Path(filepath).with_suffix('.jpg')
+    """Generate a thumbnail 1s into the clip. Returns URL path or None."""
+    p        = Path(filepath)
+    out_file = PREVIEW_DIR / f'{p.stem}.jpg'
+    if out_file.exists():
+        return f'/previews/{p.stem}.jpg'
+    if not FFMPEG.exists():
+        return None
     try:
-        subprocess.run([
-            str(FFMPEG),
-            '-i', str(filepath),
-            '-ss', '00:00:01',   # seek 1 second in
-            '-frames:v', '1',
-            '-q:v', '2',         # quality for jpeg
-            '-y',
-            str(out_file)
-        ], capture_output=True, timeout=5)
+        result = subprocess.run([
+            str(FFMPEG), '-i', str(p),
+            '-ss', '00:00:01', '-frames:v', '1',
+            '-q:v', '3', '-y', str(out_file)
+        ], capture_output=True, timeout=10)
         if out_file.exists():
-            return str(out_file)
+            return f'/previews/{p.stem}.jpg'
     except Exception:
         pass
     return None
 
 def probe_duration(filepath):
+    """Return 'M:SS' string or None if unavailable."""
     if not FFPROBE.exists():
-        return '?:??'
+        return None
     try:
         result = subprocess.run(
             [str(FFPROBE), '-v', 'quiet', '-print_format', 'json',
@@ -210,7 +214,7 @@ def probe_duration(filepath):
         m, s = divmod(int(secs), 60)
         return f'{m}:{s:02d}'
     except Exception:
-        return '?:??'
+        return None
 
 def file_to_clip(filepath):
     p       = Path(filepath)
@@ -235,12 +239,13 @@ def file_to_clip(filepath):
 
     boxart_file = BOXART_DIR / f'{game_key}.jpg'
     boxart_url  = f'/boxart/{game_key}.jpg' if boxart_file.exists() else None
-    
-    preview_file = Path(BOXART_DIR) / f'{p.stem}_preview.jpg'
-    if not preview_file.exists():
-        preview_file = generate_preview(p) or None
-    else:
-        preview_file = str(preview_file)
+
+    preview_file = PREVIEW_DIR / f'{p.stem}.jpg'
+    preview_url  = f'/previews/{p.stem}.jpg' if preview_file.exists() else None
+
+    # kick off background preview generation if missing
+    if not preview_url:
+        threading.Thread(target=generate_preview, args=(p,), daemon=True).start()
 
     return {
         'name':     p.stem,
@@ -249,10 +254,10 @@ def file_to_clip(filepath):
         'game_key': game_key,
         'size':     f'{size_mb:.1f} MB',
         'date':     date_str,
-        'dur':      probe_duration(p),
+        'dur':      probe_duration(p),   # sync probe — fast with ffprobe
         'path':     str(p),
         'boxart':   boxart_url,
-        'preview': preview_file,
+        'preview':  preview_url,
     }
 
 # ── routes ────────────────────────────────────────────────────────
@@ -294,6 +299,7 @@ def list_clips():
     )
     return jsonify([file_to_clip(f) for f in files])
 
+# NOTE: open-folder must come before /<filename> routes
 @app.route('/clips/open-folder', methods=['POST'])
 def open_clips_folder():
     clips_dir = get_clips_dir()
@@ -307,6 +313,12 @@ def delete_clip(filename):
     if not target.exists():
         return jsonify({'error': 'not found'}), 404
     target.unlink()
+    # clean up associated preview
+    stem    = Path(filename).stem
+    preview = PREVIEW_DIR / f'{stem}.jpg'
+    if preview.exists():
+        try: preview.unlink()
+        except Exception: pass
     return jsonify({'ok': True})
 
 @app.route('/clips/<filename>/show', methods=['POST'])
@@ -315,6 +327,20 @@ def show_clip(filename):
     if target.exists():
         subprocess.Popen(['explorer', '/select,', str(target)])
     return jsonify({'ok': True})
+
+@app.route('/clips/<filename>/preview', methods=['GET'])
+def get_clip_preview(filename):
+    """Return or trigger preview generation for a single clip."""
+    target = get_clips_dir() / filename
+    if not target.exists():
+        return jsonify({'error': 'not found'}), 404
+    url = generate_preview(target)
+    return jsonify({'preview': url})
+
+@app.route('/previews/<filename>')
+def serve_preview(filename):
+    from flask import send_from_directory
+    return send_from_directory(str(PREVIEW_DIR), filename)
 
 @app.route('/capture/start', methods=['POST'])
 def capture_start():
@@ -389,17 +415,13 @@ def save_clip():
             'detail': result.stderr.decode(errors='replace')
         }), 500
 
-    # flush temp chunks after successful save
     for c in chunks:
-        try:
-            c.unlink()
-        except Exception:
-            pass
-    try:
-        concat_file.unlink()
-    except Exception:
-        pass
+        try: c.unlink()
+        except Exception: pass
+    try: concat_file.unlink()
+    except Exception: pass
 
+    threading.Thread(target=generate_preview, args=(out_file,), daemon=True).start()
     play_sound('clip')
     return jsonify({'ok': True, 'file': str(out_file), 'name': name})
 
@@ -411,7 +433,7 @@ def get_game_meta():
 
 @app.route('/games/<game_key>/rename', methods=['POST'])
 def rename_game(game_key):
-    body = request.get_json(silent=True) or {}
+    body     = request.get_json(silent=True) or {}
     new_name = (body.get('name') or '').strip()
     if not new_name:
         return jsonify({'error': 'name required'}), 400
@@ -425,7 +447,6 @@ def rename_game(game_key):
 @app.route('/games/<game_key>/boxart', methods=['POST'])
 def upload_boxart(game_key):
     body = request.get_json(silent=True) or {}
-
     if 'url' in body:
         try:
             req = urllib.request.Request(body['url'], headers={'User-Agent': 'clipdat/1.0'})
@@ -452,7 +473,6 @@ def upload_boxart(game_key):
         meta[game_key] = {}
     meta[game_key]['boxart'] = f'/boxart/{game_key}.jpg'
     game_meta_save(meta)
-
     return jsonify({'ok': True, 'path': f'/boxart/{game_key}.jpg'})
 
 @app.route('/games/<game_key>/boxart', methods=['DELETE'])

@@ -5,8 +5,6 @@
 [ ] Add back quick settings to dashboard (mirrors settings in preferences and video) 
     (active window only, start buffering on app startup, clip save sound, recording sounds, buffer duration)
 [ ] Add sound filtering from recordings
-[ ] Add specific EXE clip capturing
-[ ] Button to minimize the sidebar
 [ ] Custom clipping sounds
 [ ] A way to retrieve game box art for specific games
 [ ] fix video length not being retrieved and thumbnails not being applied
