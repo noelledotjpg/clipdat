@@ -313,6 +313,14 @@ function renderGallery(filter) {
       btn.addEventListener('click', () => deleteClip(btn.dataset.del)))
     content.querySelectorAll('[data-edit-game]').forEach(btn =>
       btn.addEventListener('click', e => { e.stopPropagation(); openGameModal(btn.dataset.editGame) }))
+    content.querySelectorAll('.clip-thumb').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        const card = thumb.closest('.clip-card')
+        const fn   = card?.querySelector('[data-show]')?.dataset?.show
+        const c    = clips.find(x => x.filename === fn)
+        if (c) openVideoPlayer(c)
+      })
+    })
     return
   }
 
@@ -441,6 +449,18 @@ function applySettingsToUI() {
   setKeyBtn('key-toggle-rec',   s.hotkeys.toggle_recording)
   setKeyBtn('key-open-browser', s.hotkeys.open_browser)
 
+  // audio panel
+  const audio = s.audio || {}
+  setInput('audio-desktop-device', audio.desktop_device || '')
+  setInput('audio-mic-device',     audio.mic_device     || '')
+  setToggle('audio-mic-enabled',   audio.mic_enabled    ?? false)
+  setToggle('audio-separate',      audio.separate_tracks ?? false)
+  const desktopVol = document.getElementById('audio-desktop-vol')
+  const micVol     = document.getElementById('audio-mic-vol')
+  if (desktopVol) desktopVol.value = audio.desktop_volume ?? 100
+  if (micVol)     micVol.value     = audio.mic_volume     ?? 100
+  updateAudioDeviceList()
+
   // apps
   renderTags('monitored-list', s.apps.monitored,      'monitored')
   renderTags('excluded-list',  s.apps.audio_excluded, 'excluded')
@@ -510,6 +530,17 @@ function collectSettings() {
   if (!settings.apps) settings.apps = {}
   settings.apps.record_desktop = getToggle('toggle-record-desktop')
 
+  // audio
+  if (!settings.audio) settings.audio = {}
+  settings.audio.desktop_device  = getInput('audio-desktop-device')
+  settings.audio.mic_device      = getInput('audio-mic-device')
+  settings.audio.mic_enabled     = getToggle('audio-mic-enabled')
+  settings.audio.separate_tracks = getToggle('audio-separate')
+  const dvEl = document.getElementById('audio-desktop-vol')
+  const mvEl = document.getElementById('audio-mic-vol')
+  if (dvEl) settings.audio.desktop_volume = parseInt(dvEl.value) || 100
+  if (mvEl) settings.audio.mic_volume     = parseInt(mvEl.value) || 100
+
   // keep quick settings in sync with preferences panel
   setToggle('qs-record-on-launch', settings.general.record_on_launch)
   setToggle('qs-active-window',    settings.general.active_window_only)
@@ -541,10 +572,20 @@ function removeApp(name, type) {
   saveSettings()
 }
 
-function addApp(type) {
-  const name = prompt('Enter executable name (e.g. cs2.exe)')
-  if (!name?.trim()) return
-  const exe = name.trim()
+async function addApp(type) {
+  // Try file picker first (Electron + backend), fall back to prompt
+  const res = await api('/system/pick-exe', 'POST')
+  let exe
+  if (res?.ok && res.name) {
+    exe = res.name
+  } else if (res?.cancelled) {
+    return  // user cancelled picker
+  } else {
+    // fallback: manual text entry
+    const name = prompt('Enter executable name (e.g. cs2.exe)')
+    if (!name?.trim()) return
+    exe = name.trim()
+  }
   if (!settings) return
   if (type === 'monitored') {
     if (!settings.apps.monitored.includes(exe)) settings.apps.monitored.push(exe)
@@ -557,7 +598,6 @@ function addApp(type) {
   toast(`added ${exe}`)
 }
 
-// keep window.addApp for any legacy inline onclick usages
 window.addApp = addApp
 
 // ── capture ───────────────────────────────────────────────────────
@@ -836,6 +876,88 @@ function initApps() {
   })
 }
 
+
+// ── audio device list ─────────────────────────────────────────────
+
+let audioDevices = []
+
+async function updateAudioDeviceList() {
+  const res = await api('/audio/devices')
+  audioDevices = res?.devices || []
+  populateDeviceSelect('audio-desktop-device-select', audioDevices)
+  populateDeviceSelect('audio-mic-device-select',     audioDevices)
+}
+
+function populateDeviceSelect(id, devices) {
+  const sel = document.getElementById(id)
+  if (!sel) return
+  const current = sel.dataset.bound || ''
+  sel.innerHTML = `<option value="">-- none --</option>` +
+    devices.map(d => `<option value="${d}" ${d === current ? 'selected' : ''}>${d}</option>`).join('')
+  sel.addEventListener('change', () => {
+    const inputId = id.replace('-select', '')
+    const inp = document.getElementById(inputId)
+    if (inp) { inp.value = sel.value; collectSettings() }
+  })
+}
+
+function initAudio() {
+  document.getElementById('audio-refresh-btn')?.addEventListener('click', updateAudioDeviceList)
+  document.querySelectorAll('.audio-setting').forEach(el => {
+    el.addEventListener('change', collectSettings)
+    el.addEventListener('input',  collectSettings)
+  })
+  // volume label live update
+  const dv = document.getElementById('audio-desktop-vol')
+  const mv = document.getElementById('audio-mic-vol')
+  if (dv) dv.addEventListener('input', () => {
+    const l = document.getElementById('audio-desktop-vol-label')
+    if (l) l.textContent = dv.value + '%'
+  })
+  if (mv) mv.addEventListener('input', () => {
+    const l = document.getElementById('audio-mic-vol-label')
+    if (l) l.textContent = mv.value + '%'
+  })
+}
+
+// ── video player modal ────────────────────────────────────────────
+
+let playerClip = null
+
+function openVideoPlayer(clip) {
+  playerClip = clip
+  const modal  = document.getElementById('video-player-overlay')
+  const video  = document.getElementById('video-player-el')
+  const title  = document.getElementById('video-player-title')
+  if (!modal || !video) return
+
+  const src = `${BACKEND}/clips/${encodeURIComponent(clip.filename)}/stream`
+  video.src = src
+  if (title) title.textContent = clip.name
+  modal.classList.add('active')
+  video.play().catch(() => {})
+}
+
+function closeVideoPlayer() {
+  const modal = document.getElementById('video-player-overlay')
+  const video = document.getElementById('video-player-el')
+  if (video) { video.pause(); video.src = '' }
+  modal?.classList.remove('active')
+  playerClip = null
+}
+
+function initVideoPlayer() {
+  document.getElementById('video-player-close')?.addEventListener('click', closeVideoPlayer)
+  document.getElementById('video-player-overlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('video-player-overlay')) closeVideoPlayer()
+  })
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('video-player-overlay')?.classList.contains('active')) {
+      closeVideoPlayer()
+    }
+  })
+}
+
 // ── record on launch ──────────────────────────────────────────────
 
 async function handleRecordOnLaunch() {
@@ -856,6 +978,8 @@ async function init() {
   initSidebarCollapse()
   initGameModal()
   initApps()
+  initAudio()
+  initVideoPlayer()
   watchSettings()
 
   await Promise.all([loadSettings(), pollBackend()])
@@ -864,8 +988,12 @@ async function init() {
   handleRecordOnLaunch()
 
   setInterval(pollBackend, 5000)
-  setInterval(loadClips,   30000)
   setInterval(pollPreviews, 10000)
+  // Fast clip watcher: poll every 2s, only full reload when something changes
+  setInterval(async () => {
+    const res = await api('/clips/poll')
+    if (res?.changed) await loadClips()
+  }, 2000)
 }
 
 init()

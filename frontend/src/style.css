@@ -184,6 +184,8 @@ input, select { font-family: inherit; font-size: 13px; outline: none; }
 .panel { display: none; padding: 14px 16px; }
 .panel.active { display: block; }
 
+.btn-standard { font-size: 12px; color: var(--muted); border: 1px solid var(--border2); padding: 3px 10px; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; transition: color 0.1s, border-color 0.1s; }
+
 /* ── DASHBOARD ── */
 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .card { background: var(--surface); border: 1px solid var(--border); padding: 11px 13px; }
@@ -299,7 +301,7 @@ input, select { font-family: inherit; font-size: 13px; outline: none; }
 .field-row:last-child { border-bottom: none; }
 .field-label { color: var(--fg); }
 .field-sub { font-size: 11px; color: var(--muted); }
-.ctrl-select { background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 3px 8px; min-width: 130px; }
+.ctrl-select { background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 3px 8px; font-family: var(--mono); font-size: 12px; min-width: 130px; height: 23px; }
 .ctrl-select:focus { border-color: var(--accent); }
 .ctrl-input { background: var(--surface2); border: 1px solid var(--border2); color: var(--fg); padding: 3px 8px; font-family: var(--mono); font-size: 12px; width: 240px; }
 .ctrl-input:focus { border-color: var(--accent); }
@@ -358,3 +360,38 @@ input, select { font-family: inherit; font-size: 13px; outline: none; }
 
 /* ── QUICK SETTINGS: allow select in a toggle-row ── */
 .toggle-row .ctrl-select { min-width: 110px; }
+/* ── VIDEO PLAYER MODAL ── */
+.video-player-modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  width: min(860px, calc(100vw - 40px));
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── AUDIO RANGE SLIDER ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border2);
+  height: 3px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px;
+  height: 12px;
+  border-radius: 0px;
+  background-color: var(--fg);
+  transform: translateX(4px);
+
+  transition: background-color 0.2s ease ;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background-color: var(--accent);
+}
+
+/* ── CLIP THUMB CURSOR ── */
+.clip-thumb { cursor: pointer; }

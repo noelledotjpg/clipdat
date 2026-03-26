@@ -50,6 +50,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/></svg>
           <span>games &amp; apps</span>
         </button>
+        <button class="nav-item" data-panel="audio">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>
+          <span>audio</span>
+        </button>
         <button class="nav-item" data-panel="hotkeys">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
           <span>hotkeys</span>
@@ -213,25 +217,28 @@
       <div class="panel" id="panel-apps">
         <div class="settings-section">
           <div class="settings-section-title">monitored games &amp; apps</div>
-          <p style="color:var(--muted);font-size:12px;margin-bottom:4px">clipdat will only record when one of these processes is in the foreground.</p>
-          <div class="toggle-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-            <div><div class="toggle-label">record desktop if none focused</div><div class="toggle-sub">keep recording even when no monitored app is in focus</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span class="toggle-track"></span></label>
-          </div>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">clipdat will only record when one of these processes is in the foreground. click "browse" to locate an exe.</p>
           <div class="tag-list" id="monitored-list"></div>
-          <button class="add-tag-btn" data-add-app="monitored">
+          <button class="add-tag-btn" data-add-app="monitored" style="margin-top:10px">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-            add executable
+            browse for executable
           </button>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">excluded from audio</div>
-          <p style="color:var(--muted);font-size:12px">audio from these processes will be stripped from recordings.</p>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">audio from these processes will be stripped from recordings.</p>
           <div class="tag-list" id="excluded-list"></div>
-          <button class="add-tag-btn" data-add-app="excluded">
+          <button class="add-tag-btn" data-add-app="excluded" style="margin-top:10px">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-            add executable
+            browse for executable
           </button>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">capture behaviour</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">record desktop if none focused</div><div class="toggle-sub">keep recording even when no monitored app is in focus</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span class="toggle-track"></span></label>
+          </div>
         </div>
       </div>
 
@@ -311,6 +318,65 @@
         </div>
       </div>
 
+
+      <!-- AUDIO -->
+      <div class="panel" id="panel-audio">
+        <div class="settings-section">
+          <div class="settings-section-title">desktop audio</div>
+          <div class="field-row">
+            <div><div class="field-label">capture device</div><div class="field-sub">stereo mix, WASAPI loopback, or virtual cable</div></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+              <select class="ctrl-select" id="audio-desktop-device-select" style="min-width:200px"></select>
+              <input class="ctrl-input" id="audio-desktop-device" type="text" placeholder="device name" style="width:200px;font-size:11px" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-label">volume</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" id="audio-desktop-vol" class="audio-setting" min="0" max="200" value="100" style="width:120px" />
+              <span id="audio-desktop-vol-label" style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">microphone</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">enable microphone</div><div class="toggle-sub">mix mic audio into the recording</div></div>
+            <label class="toggle"><input type="checkbox" id="audio-mic-enabled" class="audio-setting" /><span class="toggle-track"></span></label>
+          </div>
+          <div class="field-row">
+            <div><div class="field-label">mic device</div></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+              <select class="ctrl-select" id="audio-mic-device-select" style="min-width:200px"></select>
+              <input class="ctrl-input" id="audio-mic-device" type="text" placeholder="device name" style="width:200px;font-size:11px" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-label">mic volume</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" id="audio-mic-vol" class="audio-setting" min="0" max="200" value="100" style="width:120px" />
+              <span id="audio-mic-vol-label" style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">output</div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">separate audio tracks</div><div class="toggle-sub">save desktop and mic as separate tracks in the video file</div></div>
+            <label class="toggle"><input type="checkbox" id="audio-separate" class="audio-setting" /><span class="toggle-track"></span></label>
+          </div>
+        </div>
+
+        <div style="margin-top:4px">
+          <button class="add-tag-btn" id="audio-refresh-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            refresh device list
+          </button>
+        </div>
+      </div>
+
       <!-- HOTKEYS -->
       <div class="panel" id="panel-hotkeys">
         <div class="settings-section">
@@ -335,33 +401,69 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- Game edit modal -->
+<!-- Video Player Modal -->
+<div class="modal-overlay" id="video-player-overlay">
+  <div class="video-player-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="video-player-title">clip</div>
+      <button class="modal-close" id="video-player-close">✕</button>
+    </div>
+    <div style="background:#000;width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+      <video id="video-player-el" controls style="width:100%;height:100%;outline:none;" preload="metadata"></video>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="game-modal-overlay">
-  <div class="modal" id="game-modal">
+  <div class="modal modal-md" id="game-modal">
+
     <div class="modal-header">
       <div class="modal-title">edit game</div>
       <button class="modal-close" id="game-modal-close">✕</button>
     </div>
+
     <div class="modal-body">
+
       <div class="modal-field">
         <label class="modal-label">display name</label>
-        <input class="ctrl-input wide" id="game-modal-name" type="text" placeholder="Game name…" />
+        <input class="ctrl-input wide" id="game-modal-name" type="text" placeholder="Enter game name…" />
       </div>
+
       <div class="modal-field">
         <label class="modal-label">box art</label>
+
         <div class="boxart-preview" id="boxart-preview"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-          <button class="add-tag-btn" id="boxart-url-btn">paste image URL</button>
-          <button class="add-tag-btn" id="boxart-file-btn">upload image</button>
-          <button class="add-tag-btn del-btn" id="boxart-remove-btn">remove</button>
+
+        <div class="modal-actions-row">
+          <button class="btn-standard" id="boxart-url-btn">
+            paste URL
+          </button>
+
+          <button class="btn-standard" id="boxart-file-btn">
+            upload Image
+          </button>
+
+          <button class="btn-standard btn-danger" id="boxart-remove-btn">
+            remove
+          </button>
         </div>
-        <input type="file" id="boxart-file-input" accept="image/*" style="display:none" />
+
+        <input type="file" id="boxart-file-input" accept="image/*" hidden />
       </div>
+
     </div>
-    <div class="modal-footer">
-      <button class="add-tag-btn" id="game-modal-save">save changes</button>
-      <button class="add-tag-btn" id="game-modal-cancel">cancel</button>
+
+    <div class="modal-footer modal-footer-split">
+      <button class="btn-standard" id="game-modal-cancel">
+        cancel
+      </button>
+
+      <button class="btn-standard btn-primary" id="game-modal-save">
+        save
+      </button>
     </div>
+
   </div>
 </div>
 

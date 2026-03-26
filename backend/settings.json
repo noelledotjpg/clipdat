@@ -30,5 +30,13 @@
     "folder": "C:\\Users\\User\\Videos\\ClipDat",
     "open_folder_after_save": false,
     "quality": "high"
+  },
+  "audio": {
+    "desktop_device": "",
+    "mic_device": "",
+    "mic_enabled": true,
+    "separate_tracks": true,
+    "desktop_volume": 100,
+    "mic_volume": 100
   }
 }
