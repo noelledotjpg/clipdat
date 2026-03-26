@@ -1,472 +1,698 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>clipdat!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Krona+One&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Krona+One&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css">
 </head>
+
 <body>
-<div class="shell">
-  <div class="topbar">
-    <div class="logo">
-      <img src="/src/img/icon_titlebar.png" alt="">
-      <span class="logo-text">clip<em>dat!</em></span>
+  <div class="shell">
+    <div class="topbar">
+      <div class="logo">
+        <img src="/src/img/icon_titlebar.png" alt="">
+        <span class="logo-text">clip<em>dat!</em></span>
+      </div>
+      <div class="version">v0.1a</div>
+      <div class="rec-indicator" id="rec-indicator">
+        <div class="rec-dot"></div>
+        <span class="rec-label">recording</span>
+      </div>
     </div>
-    <div class="version">v0.1a</div>
-    <div class="rec-indicator" id="rec-indicator">
-      <div class="rec-dot"></div>
-      <span class="rec-label">recording</span>
+    <div class="body">
+      <div class="sidebar" id="sidebar">
+        <nav class="nav">
+          <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="collapse sidebar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-chevron-left-icon lucide-chevron-left">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <div class="nav-group-label">general</div>
+          <span class="label-divider" style="opacity: 0%;"></span>
+          <button class="nav-item active" data-panel="dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="7" height="9" x="3" y="3" rx="1" />
+              <rect width="7" height="5" x="14" y="3" rx="1" />
+              <rect width="7" height="9" x="14" y="12" rx="1" />
+              <rect width="7" height="5" x="3" y="16" rx="1" />
+            </svg>
+            <span>dashboard</span>
+          </button>
+          <button class="nav-item" data-panel="clips">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12.296 3.464 3.02 3.956" />
+              <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z" />
+              <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path d="m6.18 5.276 3.1 3.899" />
+            </svg>
+            <span>clips</span>
+          </button>
+          <button class="nav-item" data-panel="apps">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="8" height="18" x="3" y="3" rx="1" />
+              <path d="M7 3v18" />
+              <path
+                d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z" />
+            </svg>
+            <span>games &amp; apps</span>
+          </button>
+          <div class="nav-group-label" style="margin-top:6px">settings</div>
+          <span class="label-divider"></span>
+          <button class="nav-item" data-panel="preferences">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-settings-icon lucide-settings">
+              <path
+                d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>preferences</span>
+          </button>
+          <button class="nav-item" data-panel="video">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="3" rx="2" />
+              <line x1="8" x2="16" y1="21" y2="21" />
+              <line x1="12" x2="12" y1="17" y2="21" />
+            </svg>
+            <span>video</span>
+          </button>
+          <button class="nav-item" data-panel="audio">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-volume2-icon lucide-volume-2">
+              <path
+                d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />
+              <path d="M16 9a5 5 0 0 1 0 6" />
+              <path d="M19.364 18.364a9 9 0 0 0 0-12.728" />
+            </svg>
+            <span>audio</span>
+          </button>
+          <button class="nav-item" data-panel="hotkeys">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 8h.01" />
+              <path d="M12 12h.01" />
+              <path d="M14 8h.01" />
+              <path d="M16 12h.01" />
+              <path d="M18 8h.01" />
+              <path d="M6 8h.01" />
+              <path d="M7 16h10" />
+              <path d="M8 12h.01" />
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+            </svg>
+            <span>hotkeys</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="tray-btn" id="tray-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m7 7 10 10" />
+              <path d="M17 7v10H7" />
+            </svg>
+            <span>minimize to tray</span>
+          </button>
+        </div>
+      </div>
+      <div class="main">
+
+        <!-- DASHBOARD -->
+        <div class="panel active" id="panel-dashboard">
+          <div class="cards">
+            <div class="card">
+              <div class="card-label">total clips</div>
+              <div class="card-value" id="dash-total">—</div>
+              <div class="card-sub">all time (<span style="color:var(--accent)" id="dash-today">+0</span> today)</div>
+            </div>
+            <div class="card">
+              <div class="card-label">storage used</div>
+              <div class="card-value" id="dash-storage">—</div>
+              <div class="card-sub">in clips folder</div>
+            </div>
+            <div class="card">
+              <div class="card-label">buffer</div>
+              <div class="card-value" id="dash-buffer">60 <span style="font-size:16px;color:var(--muted)">s</span></div>
+              <div class="card-sub">max clip length</div>
+            </div>
+            <div class="card">
+              <div class="card-label">status</div>
+              <div class="card-value" style="font-size:13px" id="dash-status">idle</div>
+              <div class="card-sub" id="dash-status-sub">not recording</div>
+            </div>
+          </div>
+
+          <div class="block" id="dashboard-quick-settings">
+            <div class="section-header"><span class="section-title">quick settings</span></div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">start buffering on launch</div>
+                <div class="toggle-sub">begin capturing automatically when clipdat opens</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="qs-record-on-launch" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">active window only</div>
+                <div class="toggle-sub">pause capture when monitored app loses focus</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="qs-active-window" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">clip save sound</div>
+                <div class="toggle-sub">play a sound when saving a clip</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="qs-clip-sound" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">recording sounds</div>
+                <div class="toggle-sub">play sounds when starting and stopping a recording</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="qs-rec-sounds" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">buffer duration</div>
+                <div class="toggle-sub">max length of a saved clip</div>
+              </div>
+              <select class="ctrl-select" id="qs-buffer" data-setting>
+                <option value="30">30 seconds</option>
+                <option value="60">60 seconds</option>
+                <option value="120">2 minutes</option>
+                <option value="300">5 minutes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="section-header">
+              <span class="section-title">recent clips</span>
+              <div style="display:flex;gap:10px;align-items:center">
+                <button class="link-btn" data-panel="clips">view all</button>
+                <button title="open clips folder" class="folder-btn" id="dash-folder-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <table class="clip-table" style="margin-top:8px">
+              <thead>
+                <tr>
+                  <th>name</th>
+                  <th>game</th>
+                  <th>dur</th>
+                  <th>size</th>
+                  <th>date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="recent-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CLIPS -->
+        <div class="panel" id="panel-clips">
+          <div class="clips-toolbar">
+            <div style="display:flex;gap:8px;align-items:center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21 21-4.34-4.34" />
+                <circle cx="11" cy="11" r="8" />
+              </svg>
+              <input class="clip-search" id="clip-search" placeholder="search clips…" />
+              <div class="view-toggle" style="height:25px">
+                <button class="view-btn active" id="view-gallery" title="gallery">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="7" height="7" x="3" y="3" rx="1" />
+                    <rect width="7" height="7" x="14" y="3" rx="1" />
+                    <rect width="7" height="7" x="14" y="14" rx="1" />
+                    <rect width="7" height="7" x="3" y="14" rx="1" />
+                  </svg>
+                </button>
+                <button class="view-btn" id="view-list" title="list">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="7" height="7" x="3" y="3" rx="1" />
+                    <rect width="7" height="7" x="3" y="14" rx="1" />
+                    <path d="M14 4h7" />
+                    <path d="M14 9h7" />
+                    <path d="M14 15h7" />
+                    <path d="M14 20h7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="folder-btn" id="clips-folder-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+              </svg>
+            </button>
+          </div>
+          <div id="clips-content"></div>
+        </div>
+
+        <!-- PREFERENCES -->
+        <div class="panel" id="panel-preferences">
+
+          <div class="settings-section">
+            <div class="settings-section-title">startup</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">start buffering on launch</div>
+                <div class="toggle-sub">begin capturing automatically when clipdat opens</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-record-on-launch" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">open on system startup</div>
+                <div class="toggle-sub">launch clipdat when Windows starts</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-open-on-startup" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">start minimized to tray</div>
+                <div class="toggle-sub">open directly to tray without showing the window</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-start-minimized" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">appearance</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">native titlebar</div>
+                <div class="toggle-sub">use the system window titlebar instead of a custom one</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-native-titlebar" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">capture</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">active window only</div>
+                <div class="toggle-sub">pause capture when monitored app loses focus</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-active-window" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">sounds</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">clip save sound</div>
+                <div class="toggle-sub">play a sound when a clip is saved</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-clip-sound" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">recording sounds</div>
+                <div class="toggle-sub">play sounds when starting and stopping a recording</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-rec-sounds" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">output</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">open folder after saving</div>
+                <div class="toggle-sub">open the clips folder in explorer after each save</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-open-folder" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- GAMES & APPS -->
+        <div class="panel" id="panel-apps">
+          <div class="settings-section">
+            <div class="settings-section-title">monitored games &amp; apps</div>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:8px">clipdat will only record when one of these
+              processes is in the foreground. click "browse" to locate an exe.</p>
+            <div class="tag-list" id="monitored-list"></div>
+            <button class="add-tag-btn" data-add-app="monitored" style="margin-top:10px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="5" y2="19" />
+                <line x1="5" x2="19" y1="12" y2="12" />
+              </svg>
+              browse for executable
+            </button>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">excluded from audio</div>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:8px">audio from these processes will be stripped
+              from recordings.</p>
+            <div class="tag-list" id="excluded-list"></div>
+            <button class="add-tag-btn" data-add-app="excluded" style="margin-top:10px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="5" y2="19" />
+                <line x1="5" x2="19" y1="12" y2="12" />
+              </svg>
+              browse for executable
+            </button>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">capture behaviour</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">record desktop if none focused</div>
+                <div class="toggle-sub">keep recording even when no monitored app is in focus</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="panel" id="panel-video">
+          <div class="settings-section">
+            <div class="settings-section-title">capture</div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">buffer duration</div>
+                <div class="field-sub">max length of a saved clip</div>
+              </div>
+              <select class="ctrl-select" id="sel-buffer" data-setting>
+                <option value="30">30 seconds</option>
+                <option value="60">60 seconds</option>
+                <option value="120">2 minutes</option>
+                <option value="300">5 minutes</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">resolution</div>
+              </div>
+              <select class="ctrl-select" id="sel-res" data-setting>
+                <option value="1920x1080">1920 × 1080</option>
+                <option value="1280x720">1280 × 720</option>
+                <option value="2560x1440">2560 × 1440</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">frame rate</div>
+              </div>
+              <select class="ctrl-select" id="sel-fps" data-setting>
+                <option value="30">30 fps</option>
+                <option value="60">60 fps</option>
+                <option value="120">120 fps</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">encoder</div>
+                <div class="field-sub">use GPU encoder if available</div>
+              </div>
+              <select class="ctrl-select" id="sel-encoder" data-setting>
+                <option value="h264_nvenc">h264 (NVENC)</option>
+                <option value="h264_amf">h264 (AMF)</option>
+                <option value="h264_sw">h264 (software)</option>
+                <option value="h265_nvenc">h265 (NVENC)</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">output</div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">save folder</div>
+              </div>
+              <input class="ctrl-input wide" id="inp-folder" type="text" data-setting />
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">filename</div>
+                <div class="field-sub">supports {game} {date} {time}</div>
+              </div>
+              <input class="ctrl-input" id="inp-filename" type="text" data-setting />
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">container</div>
+              </div>
+              <select class="ctrl-select" id="sel-container" data-setting>
+                <option value="mp4">mp4</option>
+                <option value="mkv">mkv</option>
+                <option value="mov">mov</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">quality</div>
+              </div>
+              <select class="ctrl-select" id="sel-quality" data-setting>
+                <option value="ultra">ultra</option>
+                <option value="high">high</option>
+                <option value="medium">medium</option>
+                <option value="low">low</option>
+              </select>
+            </div>
+          </div>
+          <div class="status-bar">
+            <div class="status-bar-title">system status</div>
+            <div class="status-row"><span class="status-key">backend</span><span class="status-val"
+                id="status-backend-ok">—</span></div>
+            <div class="status-row"><span class="status-key">ffmpeg</span><span class="status-val"
+                id="status-ffmpeg-ok">—</span></div>
+            <div class="status-row"><span class="status-key">ffmpeg path</span><span class="status-val"
+                id="status-ffmpeg-path">—</span></div>
+            <div class="status-row"><span class="status-key">clips folder</span><span class="status-val"
+                id="status-clips-dir">—</span></div>
+          </div>
+        </div>
+
+
+        <!-- AUDIO -->
+        <div class="panel" id="panel-audio">
+          <div class="settings-section">
+            <div class="settings-section-title">desktop audio</div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">capture device</div>
+                <div class="field-sub">stereo mix, WASAPI loopback, or virtual cable</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <select class="ctrl-select" id="audio-desktop-device-select" style="min-width:200px"></select>
+                <input class="ctrl-input" id="audio-desktop-device" type="text" placeholder="device name"
+                  style="width:200px;font-size:11px" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">volume</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="range" id="audio-desktop-vol" class="audio-setting" min="0" max="200" value="100"
+                  style="width:120px" />
+                <span id="audio-desktop-vol-label"
+                  style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">microphone</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">enable microphone</div>
+                <div class="toggle-sub">mix mic audio into the recording</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="audio-mic-enabled" class="audio-setting" /><span
+                  class="toggle-track"></span></label>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">mic device</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <select class="ctrl-select" id="audio-mic-device-select" style="min-width:200px"></select>
+                <input class="ctrl-input" id="audio-mic-device" type="text" placeholder="device name"
+                  style="width:200px;font-size:11px" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div>
+                <div class="field-label">mic volume</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="range" id="audio-mic-vol" class="audio-setting" min="0" max="200" value="100"
+                  style="width:120px" />
+                <span id="audio-mic-vol-label"
+                  style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">output</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">separate audio tracks</div>
+                <div class="toggle-sub">save desktop and mic as separate tracks in the video file</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="audio-separate" class="audio-setting" /><span
+                  class="toggle-track"></span></label>
+            </div>
+          </div>
+
+          <div style="margin-top:4px">
+            <button class="add-tag-btn" id="audio-refresh-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 16H3v5" />
+              </svg>
+              refresh device list
+            </button>
+          </div>
+        </div>
+
+        <!-- HOTKEYS -->
+        <div class="panel" id="panel-hotkeys">
+          <div class="settings-section">
+            <div class="settings-section-title">keybinds</div>
+            <div class="keybind-row">
+              <div>
+                <div class="keybind-desc">save clip</div>
+                <div class="keybind-sub">saves the last <b>n</b> seconds from the buffer</div>
+              </div>
+              <button class="key" id="key-save-clip">F8</button>
+            </div>
+            <div class="keybind-row">
+              <div>
+                <div class="keybind-desc">start / stop recording</div>
+                <div class="keybind-sub">toggle capture on and off</div>
+              </div>
+              <button class="key" id="key-toggle-rec">F9</button>
+            </div>
+            <div class="keybind-row">
+              <div>
+                <div class="keybind-desc">open clip browser</div>
+                <div class="keybind-sub">bring clipdat window to front</div>
+              </div>
+              <button class="key" id="key-open-browser">F10</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
-  <div class="body">
-    <div class="sidebar" id="sidebar">
-      <nav class="nav">
-        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="collapse sidebar">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <div class="nav-group-label">general</div>
-        <button class="nav-item active" data-panel="dashboard">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-          <span>dashboard</span>
-        </button>
-        <button class="nav-item" data-panel="clips">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/></svg>
-          <span>clips</span>
-        </button>
-        <div class="nav-group-label" style="margin-top:6px">settings</div>
-        <span class="label-divider"></span>
-        <button class="nav-item" data-panel="preferences">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
-          <span>preferences</span>
-        </button>
-        <button class="nav-item" data-panel="video">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
-          <span>video</span>
-        </button>
-        <button class="nav-item" data-panel="apps">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/></svg>
-          <span>games &amp; apps</span>
-        </button>
-        <button class="nav-item" data-panel="audio">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>
-          <span>audio</span>
-        </button>
-        <button class="nav-item" data-panel="hotkeys">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
-          <span>hotkeys</span>
-        </button>
-      </nav>
-      <div class="sidebar-footer">
-        <button class="tray-btn" id="tray-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="M17 7v10H7"/></svg>
-          <span>minimize to tray</span>
-        </button>
+  <div class="toast" id="toast"></div>
+
+  <!-- Video Player Modal -->
+  <div class="modal-overlay" id="video-player-overlay">
+    <div class="video-player-modal">
+      <div class="modal-header">
+        <div class="modal-title" id="video-player-title">clip</div>
+        <button class="modal-close" id="video-player-close">✕</button>
+      </div>
+      <div style="background:#000;width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+        <video id="video-player-el" controls style="width:100%;height:100%;outline:none;" preload="metadata"></video>
       </div>
     </div>
-    <div class="main">
+  </div>
 
-      <!-- DASHBOARD -->
-      <div class="panel active" id="panel-dashboard">
-        <div class="cards">
-          <div class="card">
-            <div class="card-label">total clips</div>
-            <div class="card-value" id="dash-total">—</div>
-            <div class="card-sub">all time (<span style="color:var(--accent)" id="dash-today">+0</span> today)</div>
-          </div>
-          <div class="card">
-            <div class="card-label">storage used</div>
-            <div class="card-value" id="dash-storage">—</div>
-            <div class="card-sub">in clips folder</div>
-          </div>
-          <div class="card">
-            <div class="card-label">buffer</div>
-            <div class="card-value" id="dash-buffer">60 <span style="font-size:16px;color:var(--muted)">s</span></div>
-            <div class="card-sub">max clip length</div>
-          </div>
-          <div class="card">
-            <div class="card-label">status</div>
-            <div class="card-value" style="font-size:13px" id="dash-status">idle</div>
-            <div class="card-sub" id="dash-status-sub">not recording</div>
-          </div>
-        </div>
 
-        <div class="block" id="dashboard-quick-settings">
-          <div class="section-header"><span class="section-title">quick settings</span></div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">start buffering on launch</div><div class="toggle-sub">begin capturing automatically when clipdat opens</div></div>
-            <label class="toggle"><input type="checkbox" id="qs-record-on-launch" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">active window only</div><div class="toggle-sub">pause capture when monitored app loses focus</div></div>
-            <label class="toggle"><input type="checkbox" id="qs-active-window" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">clip save sound</div><div class="toggle-sub">play a sound when saving a clip</div></div>
-            <label class="toggle"><input type="checkbox" id="qs-clip-sound" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">recording sounds</div><div class="toggle-sub">play sounds when starting and stopping a recording</div></div>
-            <label class="toggle"><input type="checkbox" id="qs-rec-sounds" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">buffer duration</div><div class="toggle-sub">max length of a saved clip</div></div>
-            <select class="ctrl-select" id="qs-buffer" data-setting>
-              <option value="30">30 seconds</option>
-              <option value="60">60 seconds</option>
-              <option value="120">2 minutes</option>
-              <option value="300">5 minutes</option>
-            </select>
-          </div>
-        </div>
+  <div class="modal-overlay" id="game-modal-overlay">
+    <div class="modal modal-game" id="game-modal">
 
-        <div class="block">
-          <div class="section-header">
-            <span class="section-title">recent clips</span>
-            <div style="display:flex;gap:10px;align-items:center">
-              <button class="link-btn" data-panel="clips">view all</button>
-              <button title="open clips folder" class="folder-btn" id="dash-folder-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-              </button>
-            </div>
-          </div>
-          <table class="clip-table" style="margin-top:8px">
-            <thead><tr><th>name</th><th>game</th><th>dur</th><th>size</th><th>date</th><th></th></tr></thead>
-            <tbody id="recent-tbody"></tbody>
-          </table>
-        </div>
+      <div class="modal-header">
+        <div class="modal-title">edit game</div>
+        <button class="modal-close" id="game-modal-close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
 
-      <!-- CLIPS -->
-      <div class="panel" id="panel-clips">
-        <div class="clips-toolbar">
-          <div style="display:flex;gap:8px;align-items:center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-            <input class="clip-search" id="clip-search" placeholder="search clips…" />
-            <div class="view-toggle" style="height:25px">
-              <button class="view-btn active" id="view-gallery" title="gallery">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-              </button>
-              <button class="view-btn" id="view-list" title="list">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7"/><path d="M14 9h7"/><path d="M14 15h7"/><path d="M14 20h7"/></svg>
-              </button>
-            </div>
-          </div>
-          <button class="folder-btn" id="clips-folder-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-          </button>
+      <div class="modal-body">
+
+        <div class="modal-field">
+          <label class="modal-label">display name</label>
+          <input class="ctrl-input wide" style="width: auto;" id="game-modal-name" type="text"
+            placeholder="Enter game name…" />
         </div>
-        <div id="clips-content"></div>
+
+        <div class="modal-field">
+          <label class="modal-label">box art <span class="modal-label-hint">600 × 900 recommended</span></label>
+
+          <div class="boxart-drop" id="boxart-drop">
+            <div class="boxart-skeleton" id="boxart-skeleton">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-upload-icon lucide-upload">
+                <path d="M12 3v12" />
+                <path d="m17 8-5-5-5 5" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              </svg>
+              <span class="boxart-skeleton-label">drop image here</span>
+              <span class="boxart-skeleton-hint">click to browse or Ctrl+V to paste </span>
+            </div>
+            <img class="boxart-img" id="boxart-img" src="" alt="box art" style="display:none" />
+            <button class="boxart-clear-btn" id="boxart-remove-btn" title="remove box art"
+              style="display:none">✕</button>
+          </div>
+
+          <div class="boxart-url-row">
+            <input class="ctrl-input" id="boxart-url-input" type="text" placeholder="or paste an image URL…" />
+            <button class="btn-standard" id="boxart-url-fetch-btn">fetch</button>
+          </div>
+
+          <input type="file" id="boxart-file-input" accept="image/*" hidden />
+        </div>
+
       </div>
 
-      <!-- PREFERENCES -->
-      <div class="panel" id="panel-preferences">
-
-        <div class="settings-section">
-          <div class="settings-section-title">startup</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">start buffering on launch</div><div class="toggle-sub">begin capturing automatically when clipdat opens</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-record-on-launch" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">open on system startup</div><div class="toggle-sub">launch clipdat when Windows starts</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-open-on-startup" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">start minimized to tray</div><div class="toggle-sub">open directly to tray without showing the window</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-start-minimized" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">appearance</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">native titlebar</div><div class="toggle-sub">use the system window titlebar instead of a custom one</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-native-titlebar" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">capture</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">active window only</div><div class="toggle-sub">pause capture when monitored app loses focus</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-active-window" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">sounds</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">clip save sound</div><div class="toggle-sub">play a sound when a clip is saved</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-clip-sound" data-setting /><span class="toggle-track"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">recording sounds</div><div class="toggle-sub">play sounds when starting and stopping a recording</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-rec-sounds" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">output</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">open folder after saving</div><div class="toggle-sub">open the clips folder in explorer after each save</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-open-folder" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- GAMES & APPS -->
-      <div class="panel" id="panel-apps">
-        <div class="settings-section">
-          <div class="settings-section-title">monitored games &amp; apps</div>
-          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">clipdat will only record when one of these processes is in the foreground. click "browse" to locate an exe.</p>
-          <div class="tag-list" id="monitored-list"></div>
-          <button class="add-tag-btn" data-add-app="monitored" style="margin-top:10px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-            browse for executable
-          </button>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">excluded from audio</div>
-          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">audio from these processes will be stripped from recordings.</p>
-          <div class="tag-list" id="excluded-list"></div>
-          <button class="add-tag-btn" data-add-app="excluded" style="margin-top:10px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-            browse for executable
-          </button>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">capture behaviour</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">record desktop if none focused</div><div class="toggle-sub">keep recording even when no monitored app is in focus</div></div>
-            <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIDEO -->
-      <div class="panel" id="panel-video">
-        <div class="settings-section">
-          <div class="settings-section-title">capture</div>
-          <div class="field-row">
-            <div><div class="field-label">buffer duration</div><div class="field-sub">max length of a saved clip</div></div>
-            <select class="ctrl-select" id="sel-buffer" data-setting>
-              <option value="30">30 seconds</option>
-              <option value="60">60 seconds</option>
-              <option value="120">2 minutes</option>
-              <option value="300">5 minutes</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">resolution</div></div>
-            <select class="ctrl-select" id="sel-res" data-setting>
-              <option value="1920x1080">1920 × 1080</option>
-              <option value="1280x720">1280 × 720</option>
-              <option value="2560x1440">2560 × 1440</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">frame rate</div></div>
-            <select class="ctrl-select" id="sel-fps" data-setting>
-              <option value="30">30 fps</option>
-              <option value="60">60 fps</option>
-              <option value="120">120 fps</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">encoder</div><div class="field-sub">use GPU encoder if available</div></div>
-            <select class="ctrl-select" id="sel-encoder" data-setting>
-              <option value="h264_nvenc">h264 (NVENC)</option>
-              <option value="h264_amf">h264 (AMF)</option>
-              <option value="h264_sw">h264 (software)</option>
-              <option value="h265_nvenc">h265 (NVENC)</option>
-            </select>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">output</div>
-          <div class="field-row">
-            <div><div class="field-label">save folder</div></div>
-            <input class="ctrl-input wide" id="inp-folder" type="text" data-setting />
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">filename</div><div class="field-sub">supports {game} {date} {time}</div></div>
-            <input class="ctrl-input" id="inp-filename" type="text" data-setting />
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">container</div></div>
-            <select class="ctrl-select" id="sel-container" data-setting>
-              <option value="mp4">mp4</option>
-              <option value="mkv">mkv</option>
-              <option value="mov">mov</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">quality</div></div>
-            <select class="ctrl-select" id="sel-quality" data-setting>
-              <option value="ultra">ultra</option>
-              <option value="high">high</option>
-              <option value="medium">medium</option>
-              <option value="low">low</option>
-            </select>
-          </div>
-        </div>
-        <div class="status-bar">
-          <div class="status-bar-title">system status</div>
-          <div class="status-row"><span class="status-key">backend</span><span class="status-val" id="status-backend-ok">—</span></div>
-          <div class="status-row"><span class="status-key">ffmpeg</span><span class="status-val" id="status-ffmpeg-ok">—</span></div>
-          <div class="status-row"><span class="status-key">ffmpeg path</span><span class="status-val" id="status-ffmpeg-path">—</span></div>
-          <div class="status-row"><span class="status-key">clips folder</span><span class="status-val" id="status-clips-dir">—</span></div>
-        </div>
-      </div>
-
-
-      <!-- AUDIO -->
-      <div class="panel" id="panel-audio">
-        <div class="settings-section">
-          <div class="settings-section-title">desktop audio</div>
-          <div class="field-row">
-            <div><div class="field-label">capture device</div><div class="field-sub">stereo mix, WASAPI loopback, or virtual cable</div></div>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-              <select class="ctrl-select" id="audio-desktop-device-select" style="min-width:200px"></select>
-              <input class="ctrl-input" id="audio-desktop-device" type="text" placeholder="device name" style="width:200px;font-size:11px" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">volume</div></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="range" id="audio-desktop-vol" class="audio-setting" min="0" max="200" value="100" style="width:120px" />
-              <span id="audio-desktop-vol-label" style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">microphone</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">enable microphone</div><div class="toggle-sub">mix mic audio into the recording</div></div>
-            <label class="toggle"><input type="checkbox" id="audio-mic-enabled" class="audio-setting" /><span class="toggle-track"></span></label>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">mic device</div></div>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-              <select class="ctrl-select" id="audio-mic-device-select" style="min-width:200px"></select>
-              <input class="ctrl-input" id="audio-mic-device" type="text" placeholder="device name" style="width:200px;font-size:11px" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div><div class="field-label">mic volume</div></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="range" id="audio-mic-vol" class="audio-setting" min="0" max="200" value="100" style="width:120px" />
-              <span id="audio-mic-vol-label" style="font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px">100%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">output</div>
-          <div class="toggle-row">
-            <div><div class="toggle-label">separate audio tracks</div><div class="toggle-sub">save desktop and mic as separate tracks in the video file</div></div>
-            <label class="toggle"><input type="checkbox" id="audio-separate" class="audio-setting" /><span class="toggle-track"></span></label>
-          </div>
-        </div>
-
-        <div style="margin-top:4px">
-          <button class="add-tag-btn" id="audio-refresh-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-            refresh device list
-          </button>
-        </div>
-      </div>
-
-      <!-- HOTKEYS -->
-      <div class="panel" id="panel-hotkeys">
-        <div class="settings-section">
-          <div class="settings-section-title">keybinds</div>
-          <div class="keybind-row">
-            <div><div class="keybind-desc">save clip</div><div class="keybind-sub">saves the last <b>n</b> seconds from the buffer</div></div>
-            <button class="key" id="key-save-clip">F8</button>
-          </div>
-          <div class="keybind-row">
-            <div><div class="keybind-desc">start / stop recording</div><div class="keybind-sub">toggle capture on and off</div></div>
-            <button class="key" id="key-toggle-rec">F9</button>
-          </div>
-          <div class="keybind-row">
-            <div><div class="keybind-desc">open clip browser</div><div class="keybind-sub">bring clipdat window to front</div></div>
-            <button class="key" id="key-open-browser">F10</button>
-          </div>
-        </div>
+      <div class="modal-footer modal-footer-center">
+        <button class="btn-standard btn-primary" style="width: 90px; justify-content: center;"
+          id="game-modal-save">save</button>
+        <button class="btn-standard" style="width: 90px; justify-content: center;"
+          id="game-modal-cancel">cancel</button>
       </div>
 
     </div>
   </div>
-</div>
-<div class="toast" id="toast"></div>
 
-<!-- Video Player Modal -->
-<div class="modal-overlay" id="video-player-overlay">
-  <div class="video-player-modal">
-    <div class="modal-header">
-      <div class="modal-title" id="video-player-title">clip</div>
-      <button class="modal-close" id="video-player-close">✕</button>
-    </div>
-    <div style="background:#000;width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
-      <video id="video-player-el" controls style="width:100%;height:100%;outline:none;" preload="metadata"></video>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="game-modal-overlay">
-  <div class="modal modal-md" id="game-modal">
-
-    <div class="modal-header">
-      <div class="modal-title">edit game</div>
-      <button class="modal-close" id="game-modal-close">✕</button>
-    </div>
-
-    <div class="modal-body">
-
-      <div class="modal-field">
-        <label class="modal-label">display name</label>
-        <input class="ctrl-input wide" id="game-modal-name" type="text" placeholder="Enter game name…" />
-      </div>
-
-      <div class="modal-field">
-        <label class="modal-label">box art</label>
-
-        <div class="boxart-preview" id="boxart-preview"></div>
-
-        <div class="modal-actions-row">
-          <button class="btn-standard" id="boxart-url-btn">
-            paste URL
-          </button>
-
-          <button class="btn-standard" id="boxart-file-btn">
-            upload Image
-          </button>
-
-          <button class="btn-standard btn-danger" id="boxart-remove-btn">
-            remove
-          </button>
-        </div>
-
-        <input type="file" id="boxart-file-input" accept="image/*" hidden />
-      </div>
-
-    </div>
-
-    <div class="modal-footer modal-footer-split">
-      <button class="btn-standard" id="game-modal-cancel">
-        cancel
-      </button>
-
-      <button class="btn-standard btn-primary" id="game-modal-save">
-        save
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

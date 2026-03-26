@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
@@ -172,6 +172,19 @@ ipcMain.on('minimize-to-tray', () => win?.hide())
 // Renderer sends updated hotkeys after the user rebinds them
 ipcMain.on('update-hotkeys', (_event, hotkeys) => {
   registerGlobalShortcuts(hotkeys)
+})
+
+// Native file picker — used by Games & Apps panel to browse for .exe files
+ipcMain.handle('open-file-dialog', async (_event, opts = {}) => {
+  if (!win) return []
+  const result = await dialog.showOpenDialog(win, {
+    title:       opts.title       || 'Select executable',
+    buttonLabel: opts.buttonLabel || 'Select',
+    filters:     opts.filters     || [{ name: 'Executable', extensions: ['exe'] }, { name: 'All files', extensions: ['*'] }],
+    properties:  opts.properties  || ['openFile', 'multiSelections'],
+    defaultPath: opts.defaultPath || 'C:\\Program Files',
+  })
+  return result.canceled ? [] : result.filePaths
 })
 
 // ── app lifecycle ─────────────────────────────────────────────────

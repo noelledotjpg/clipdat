@@ -165,31 +165,68 @@ def build_ffmpeg_args(s):
     mic_enabled = audio.get('mic_enabled', False)
     mic_dev     = audio.get('mic_device', '').strip()
 
-    if desktop_dev:
+    has_desktop = bool(desktop_dev)
+    has_mic     = mic_enabled and bool(mic_dev)
+
+    desktop_idx = None
+    mic_idx     = None
+    next_idx    = 1
+
+    if has_desktop:
         args += ['-f', 'dshow', '-i', f'audio={desktop_dev}']
-    if mic_enabled and mic_dev:
+        desktop_idx = next_idx; next_idx += 1
+    if has_mic:
         args += ['-f', 'dshow', '-i', f'audio={mic_dev}']
+        mic_idx = next_idx; next_idx += 1
 
     args += ['-s', f'{w}x{h}'] + enc
 
-    audio_inputs = []
-    idx = 1
-    if desktop_dev:
-        audio_inputs.append(idx); idx += 1
-    if mic_enabled and mic_dev:
-        audio_inputs.append(idx); idx += 1
+    separate = audio.get('separate_tracks', False)
+    dv = int(audio.get('desktop_volume', 100))
+    mv = int(audio.get('mic_volume', 100))
 
-    if audio_inputs:
-        separate = audio.get('separate_tracks', False)
-        args += ['-map', '0:v']
-        if len(audio_inputs) == 1:
-            args += ['-map', f'{audio_inputs[0]}:a']
-        elif separate:
-            for ai in audio_inputs[1:]:
-                args += ['-map', f'{ai}:a']
+    if has_desktop and has_mic:
+        if separate:
+            # Two independent audio streams
+            fc_parts = []
+            d_out = f'{desktop_idx}:a'
+            m_out = f'{mic_idx}:a'
+            if dv != 100:
+                fc_parts.append(f'[{desktop_idx}:a]volume={dv/100:.2f}[da]')
+                d_out = '[da]'
+            if mv != 100:
+                fc_parts.append(f'[{mic_idx}:a]volume={mv/100:.2f}[ma]')
+                m_out = '[ma]'
+            if fc_parts:
+                args += ['-filter_complex', ';'.join(fc_parts)]
+            args += ['-map', '0:v', '-map', d_out, '-map', m_out]
         else:
-            flt = f'amix=inputs={len(audio_inputs)}:duration=longest'
-            args += ['-filter_complex', flt, '-map', '[amix]']
+            # Mix both into one stream
+            fc_parts = []
+            d_out = f'[{desktop_idx}:a]'
+            m_out = f'[{mic_idx}:a]'
+            if dv != 100:
+                fc_parts.append(f'[{desktop_idx}:a]volume={dv/100:.2f}[da]')
+                d_out = '[da]'
+            if mv != 100:
+                fc_parts.append(f'[{mic_idx}:a]volume={mv/100:.2f}[ma]')
+                m_out = '[ma]'
+            fc_parts.append(f'{d_out}{m_out}amix=inputs=2:duration=longest[aout]')
+            args += ['-filter_complex', ';'.join(fc_parts), '-map', '0:v', '-map', '[aout]']
+        args += ['-c:a', 'aac', '-b:a', '192k']
+    elif has_desktop:
+        if dv != 100:
+            args += ['-filter_complex', f'[{desktop_idx}:a]volume={dv/100:.2f}[da]',
+                     '-map', '0:v', '-map', '[da]']
+        else:
+            args += ['-map', '0:v', '-map', f'{desktop_idx}:a']
+        args += ['-c:a', 'aac', '-b:a', '192k']
+    elif has_mic:
+        if mv != 100:
+            args += ['-filter_complex', f'[{mic_idx}:a]volume={mv/100:.2f}[ma]',
+                     '-map', '0:v', '-map', '[ma]']
+        else:
+            args += ['-map', '0:v', '-map', f'{mic_idx}:a']
         args += ['-c:a', 'aac', '-b:a', '192k']
     else:
         args += ['-an']
@@ -594,7 +631,6 @@ def serve_boxart(filename):
     return send_from_directory(str(BOXART_DIR), filename)
 
 if __name__ == '__main__':
-    flush_temp_chunks()
     print(f'FFmpeg path:  {FFMPEG}')
     print(f'FFmpeg found: {FFMPEG.exists()}')
     print(f'Clips folder: {settings_get()["output"]["folder"]}')

@@ -1,4 +1,4 @@
-import { ipcMain, app, globalShortcut, nativeImage, BrowserWindow, Menu, Tray } from "electron";
+import { ipcMain, app, globalShortcut, nativeImage, BrowserWindow, Menu, Tray, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -145,6 +145,17 @@ function createWindow() {
 ipcMain.on("minimize-to-tray", () => win == null ? void 0 : win.hide());
 ipcMain.on("update-hotkeys", (_event, hotkeys) => {
   registerGlobalShortcuts(hotkeys);
+});
+ipcMain.handle("open-file-dialog", async (_event, opts = {}) => {
+  if (!win) return [];
+  const result = await dialog.showOpenDialog(win, {
+    title: opts.title || "Select executable",
+    buttonLabel: opts.buttonLabel || "Select",
+    filters: opts.filters || [{ name: "Executable", extensions: ["exe"] }, { name: "All files", extensions: ["*"] }],
+    properties: opts.properties || ["openFile", "multiSelections"],
+    defaultPath: opts.defaultPath || "C:\\Program Files"
+  });
+  return result.canceled ? [] : result.filePaths;
 });
 app.whenReady().then(() => {
   startBackend();
