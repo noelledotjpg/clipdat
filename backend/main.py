@@ -164,11 +164,18 @@ def build_ffmpeg_args(s):
 
     return [
         str(FFMPEG),
+        # video: screen capture
         '-f', 'gdigrab',
         '-framerate', str(cap['fps']),
         '-i', 'desktop',
+        # audio: system audio via dshow (Stereo Mix / WASAPI loopback)
+        '-f', 'dshow',
+        '-i', 'audio=virtual-audio-capturer',
         '-s', f'{w}x{h}',
     ] + enc + [
+        # audio codec
+        '-c:a', 'aac',
+        '-b:a', '192k',
         '-f', 'segment',
         '-segment_time', '5',
         '-segment_wrap', str(wrap),
@@ -342,6 +349,15 @@ def serve_preview(filename):
     from flask import send_from_directory
     return send_from_directory(str(PREVIEW_DIR), filename)
 
+@app.route('/capture/toggle', methods=['POST'])
+def capture_toggle():
+    """Toggle recording on/off — used by global shortcut and tray."""
+    recording = capture_process is not None and capture_process.poll() is None
+    if recording:
+        return capture_stop()
+    else:
+        return capture_start()
+
 @app.route('/capture/start', methods=['POST'])
 def capture_start():
     global capture_process
@@ -392,7 +408,10 @@ def save_clip():
 
     out_file = out_dir / f'{name}.{container}'
 
-    chunks = sorted(CHUNK_DIR.glob('chunk_*.mp4'))
+    # Sort chunks by modification time so wrap-around order is correct.
+    # Alphabetical sort breaks when the counter wraps (chunk_0000 sorts
+    # before chunk_0011 even though it was written later).
+    chunks = sorted(CHUNK_DIR.glob('chunk_*.mp4'), key=lambda f: f.stat().st_mtime)
     if not chunks:
         return jsonify({'error': 'no buffer chunks — is recording active?'}), 400
 
@@ -494,7 +513,6 @@ def serve_boxart(filename):
 # ── main ──────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    flush_temp_chunks()
     print(f'FFmpeg path:  {FFMPEG}')
     print(f'FFmpeg found: {FFMPEG.exists()}')
     print(f'Clips folder: {settings_get()["output"]["folder"]}')

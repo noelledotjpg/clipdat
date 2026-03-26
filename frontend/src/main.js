@@ -66,16 +66,27 @@ function gameCover(gameKey, displayName) {
 }
 
 function clipThumbHtml(clip) {
-  // use actual thumbnail preview if available, else gradient placeholder
   if (clip.preview) {
-    return `<img src="${BACKEND}${clip.preview}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="${clip.name}" onerror="this.parentElement.innerHTML='${clipThumbFallback(clip)}'" />`
+    // Wrap in a positioned div so CSS position:absolute children work correctly.
+    // Use data-fallback on the img so onerror can swap in the gradient without
+    // innerHTML quote-escaping issues.
+    return `<div class="clip-thumb-bg" id="thumb-${clip.filename.replace(/\./g,'-')}">
+      <img src="${BACKEND}${clip.preview}"
+        style="width:100%;height:100%;object-fit:cover;display:block;"
+        data-clip="${clip.filename}"
+        onload="this.style.opacity=1"
+        onerror="this.parentElement.className='clip-thumb-bg clip-thumb-fallback';this.remove()"
+      />
+    </div>`
   }
   return clipThumbFallback(clip)
 }
 
 function clipThumbFallback(clip) {
-  const cols = gameColors(clip.game)
-  return `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${cols[0]},${cols[2]});display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg></div>`
+  const cols = gameColors(clip.game || 'unknown')
+  return `<div class="clip-thumb-bg" style="background:linear-gradient(135deg,${cols[0]},${cols[2]});display:flex;align-items:center;justify-content:center;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+  </div>`
 }
 
 // ── lazy duration loading ─────────────────────────────────────────
@@ -114,10 +125,23 @@ async function pollPreviews() {
     if (res?.preview) {
       c.preview = res.preview
       updated = true
+      // Patch the DOM directly if the thumb container is already rendered,
+      // so we don't need a full re-render that causes flicker.
+      const id  = `thumb-${c.filename.replace(/\./g, '-')}`
+      const el  = document.getElementById(id)
+      if (el) {
+        el.innerHTML = `<img src="${BACKEND}${res.preview}"
+          style="width:100%;height:100%;object-fit:cover;display:block;"
+          onload="this.style.opacity=1" />`
+      }
     }
   }))
 
-  if (updated) renderClips()
+  // Only do a full re-render if something changed and DOM patching wasn't enough
+  if (updated) {
+    renderRecent()
+    // don't call renderClips() here — that would reset scroll position
+  }
 }
 
 // ── recording state UI ────────────────────────────────────────────
@@ -263,7 +287,7 @@ function renderGallery(filter) {
   ${gameClips.map(c => `
     <div class="clip-card">
       <div class="clip-thumb">
-        <img src="${c.preview || '/previews/placeholder.jpg'}" class="clip-thumb-img" />
+        ${clipThumbHtml(c)}
         <div class="clip-thumb-overlay">${PLAY_ICON}</div>
         <div class="clip-duration">${durLabel(c)}</div>
       </div>
@@ -517,7 +541,7 @@ function removeApp(name, type) {
   saveSettings()
 }
 
-window.addApp = function(type) {
+function addApp(type) {
   const name = prompt('Enter executable name (e.g. cs2.exe)')
   if (!name?.trim()) return
   const exe = name.trim()
@@ -532,6 +556,9 @@ window.addApp = function(type) {
   saveSettings()
   toast(`added ${exe}`)
 }
+
+// keep window.addApp for any legacy inline onclick usages
+window.addApp = addApp
 
 // ── capture ───────────────────────────────────────────────────────
 
@@ -623,6 +650,8 @@ function initKeyButtons() {
         if (key.id === 'key-open-browser') settings.hotkeys.open_browser     = label
         saveSettings()
         toast('keybind saved')
+        // notify main process to re-register global shortcuts
+        if (window.ipcRenderer) window.ipcRenderer.send('update-hotkeys', settings.hotkeys)
       }
       window.addEventListener('keydown', handler)
     })
@@ -797,6 +826,16 @@ function initGameModal() {
   })
 }
 
+// ── apps panel wiring ─────────────────────────────────────────────
+
+function initApps() {
+  // Wire up "add executable" buttons via event listeners instead of
+  // inline onclick — required for Electron's contextIsolation mode.
+  document.querySelectorAll('[data-add-app]').forEach(btn => {
+    btn.addEventListener('click', () => addApp(btn.dataset.addApp))
+  })
+}
+
 // ── record on launch ──────────────────────────────────────────────
 
 async function handleRecordOnLaunch() {
@@ -816,6 +855,7 @@ async function init() {
   initGlobalHotkeys()
   initSidebarCollapse()
   initGameModal()
+  initApps()
   watchSettings()
 
   await Promise.all([loadSettings(), pollBackend()])
@@ -825,7 +865,7 @@ async function init() {
 
   setInterval(pollBackend, 5000)
   setInterval(loadClips,   30000)
-  setInterval(pollPreviews, 10000)  // keep checking for new thumbnails
+  setInterval(pollPreviews, 10000)
 }
 
 init()

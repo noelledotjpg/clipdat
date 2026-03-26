@@ -219,7 +219,7 @@
             <label class="toggle"><input type="checkbox" id="toggle-record-desktop" data-setting /><span class="toggle-track"></span></label>
           </div>
           <div class="tag-list" id="monitored-list"></div>
-          <button class="add-tag-btn" onclick="addApp('monitored')">
+          <button class="add-tag-btn" data-add-app="monitored">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
             add executable
           </button>
@@ -228,7 +228,7 @@
           <div class="settings-section-title">excluded from audio</div>
           <p style="color:var(--muted);font-size:12px">audio from these processes will be stripped from recordings.</p>
           <div class="tag-list" id="excluded-list"></div>
-          <button class="add-tag-btn" onclick="addApp('excluded')">
+          <button class="add-tag-btn" data-add-app="excluded">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
             add executable
           </button>

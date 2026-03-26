@@ -1,7 +1,8 @@
-import { ipcMain, app, nativeImage, BrowserWindow, Menu, Tray } from "electron";
+import { ipcMain, app, globalShortcut, nativeImage, BrowserWindow, Menu, Tray } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 let win = null;
 let tray = null;
@@ -20,6 +21,70 @@ function startBackend() {
   (_b = backend.stderr) == null ? void 0 : _b.on("data", (d) => console.error(`[backend err] ${d.toString().trim()}`));
   backend.on("exit", (code) => console.log(`[backend] exited with code ${code}`));
 }
+function readHotkeys() {
+  var _a, _b, _c;
+  try {
+    const settingsPath = path.join(__dirname$1, "../../backend/settings.json");
+    const data = JSON.parse(readFileSync(settingsPath, "utf8"));
+    return {
+      save_clip: ((_a = data == null ? void 0 : data.hotkeys) == null ? void 0 : _a.save_clip) || "F8",
+      toggle_recording: ((_b = data == null ? void 0 : data.hotkeys) == null ? void 0 : _b.toggle_recording) || "F9",
+      open_browser: ((_c = data == null ? void 0 : data.hotkeys) == null ? void 0 : _c.open_browser) || "F10"
+    };
+  } catch {
+    return { save_clip: "F8", toggle_recording: "F9", open_browser: "F10" };
+  }
+}
+function electronKey(key) {
+  if (key.startsWith("F") && !isNaN(key.slice(1))) return key;
+  if (key === "Space") return "Space";
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+}
+async function callBackend(path2) {
+  try {
+    const { default: http } = await import("node:http");
+    return new Promise((resolve) => {
+      const req = http.request({ hostname: "localhost", port: 9847, path: path2, method: "POST" }, (res) => {
+        res.resume();
+        resolve(true);
+      });
+      req.on("error", () => resolve(false));
+      req.end();
+    });
+  } catch {
+    return false;
+  }
+}
+function registerGlobalShortcuts(hotkeys) {
+  globalShortcut.unregisterAll();
+  const saveKey = electronKey(hotkeys.save_clip);
+  const toggleKey = electronKey(hotkeys.toggle_recording);
+  const focusKey = electronKey(hotkeys.open_browser);
+  try {
+    globalShortcut.register(saveKey, () => {
+      callBackend("/capture/clip");
+    });
+  } catch (e) {
+    console.error(`[shortcuts] failed to register save key (${saveKey}):`, e.message);
+  }
+  try {
+    globalShortcut.register(toggleKey, () => {
+      callBackend("/capture/toggle");
+    });
+  } catch (e) {
+    console.error(`[shortcuts] failed to register toggle key (${toggleKey}):`, e.message);
+  }
+  try {
+    globalShortcut.register(focusKey, () => {
+      win == null ? void 0 : win.show();
+      win == null ? void 0 : win.focus();
+    });
+  } catch (e) {
+    console.error(`[shortcuts] failed to register focus key (${focusKey}):`, e.message);
+  }
+  console.log(`[shortcuts] registered: save=${saveKey} toggle=${toggleKey} focus=${focusKey}`);
+}
 function createTray() {
   const iconPath = path.join(__dirname$1, "../../frontend/src/img/icon_titlebar.png");
   const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
@@ -30,6 +95,10 @@ function createTray() {
       win == null ? void 0 : win.show();
       win == null ? void 0 : win.focus();
     } },
+    { type: "separator" },
+    { label: "Start recording", click: () => callBackend("/capture/start") },
+    { label: "Stop recording", click: () => callBackend("/capture/stop") },
+    { label: "Save clip", click: () => callBackend("/capture/clip") },
     { type: "separator" },
     { label: "Quit", click: () => {
       app.isQuitting = true;
@@ -74,8 +143,13 @@ function createWindow() {
   });
 }
 ipcMain.on("minimize-to-tray", () => win == null ? void 0 : win.hide());
+ipcMain.on("update-hotkeys", (_event, hotkeys) => {
+  registerGlobalShortcuts(hotkeys);
+});
 app.whenReady().then(() => {
   startBackend();
+  const hotkeys = readHotkeys();
+  registerGlobalShortcuts(hotkeys);
   setTimeout(() => {
     createWindow();
     createTray();
@@ -85,6 +159,7 @@ app.on("window-all-closed", () => {
 });
 app.on("before-quit", () => {
   app.isQuitting = true;
+  globalShortcut.unregisterAll();
   backend == null ? void 0 : backend.kill();
 });
 app.on("activate", () => win == null ? void 0 : win.show());
